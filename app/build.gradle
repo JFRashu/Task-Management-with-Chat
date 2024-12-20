@@ -5,14 +5,14 @@ plugins {
 
 android {
     namespace 'com.jfrashu.taskchat'
-    compileSdk 34
+    compileSdk 35
 
     defaultConfig {
         applicationId "com.jfrashu.taskchat"
         minSdk 21
         targetSdk 34
         versionCode 1
-        versionName "1.0"
+        versionName "0.1.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -33,6 +33,8 @@ android {
 }
 
 dependencies {
+    //material ui
+    implementation 'com.google.android.material:material:1.11.0'
 
     implementation libs.androidx.core.ktx
     implementation libs.androidx.appcompat
