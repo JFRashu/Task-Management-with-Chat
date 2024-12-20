@@ -2,25 +2,30 @@ package com.jfrashu.taskchat
 
 import android.content.Intent
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
-import android.util.Log
-
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
 import com.jfrashu.taskchat.databinding.ActivityWelcomeBinding
+import com.jfrashu.taskchat.loginacivities.LoginActivity
+import com.jfrashu.taskchat.registeractivities.RegisterStep1Activity
 
 class WelcomeActivity : AppCompatActivity() {
     private lateinit var binding: ActivityWelcomeBinding
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        binding = ActivityWelcomeBinding.inflate(layoutInflater)
+        setContentView(binding.root)
 
-            binding = ActivityWelcomeBinding.inflate(layoutInflater)
+        // Set onClickListeners for the buttons
+        binding.Loginbtn.setOnClickListener {
+            // Redirect to LoginActivity
+            val intent = Intent(this, LoginActivity::class.java)
+            startActivity(intent)
+        }
 
-            setContentView(binding.root)
-
-
+        binding.registerbtn.setOnClickListener {
+            // Redirect to RegisterActivity
+            val intent = Intent(this, RegisterStep1Activity::class.java)
+            startActivity(intent)
+        }
     }
 }

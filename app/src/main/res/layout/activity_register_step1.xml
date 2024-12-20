@@ -5,6 +5,282 @@
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".registeractivities.RegisterStep1Activity">
+    tools:context=".registeractivities.RegisterStep1Activity">   <!--    guidelines Vertical-->
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/v_guideline1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintGuide_percent=".1" />
 
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/v_guideline2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintGuide_percent=".9" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/v_guideline3"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintGuide_percent=".6" />
+    <!--Guidelines Horizontal-->
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/h_guideline1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent=".1" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/h_guideline2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent=".2" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/h_guideline3"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent=".21" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/h_guideline4"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent=".31" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/h_guideline5"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent=".32" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/h_guideline6"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent=".42" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/h_guideline7"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent=".43" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/h_guideline8"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent=".53" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/h_guideline9"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent=".54" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/h_guideline10"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent=".64" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/h_guideline11"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent=".65" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/h_guideline12"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent=".75" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/h_guideline13"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent=".85" />
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/h_guideline14"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent=".86" />
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/h_guideline15"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent=".86" />
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/h_guideline16"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent=".94" />
+
+    <TextView
+        android:id="@+id/textSignIn"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:padding="5dp"
+        android:text="Create New Account"
+        android:textAlignment="center"
+        android:textColor="@color/md_theme_onPrimaryFixedVariant"
+        android:textSize="30sp"
+        android:textStyle="italic"
+        app:layout_constraintBottom_toTopOf="@id/h_guideline2"
+        app:layout_constraintEnd_toStartOf="@id/v_guideline2"
+        app:layout_constraintStart_toEndOf="@id/v_guideline1"
+        app:layout_constraintTop_toBottomOf="@id/h_guideline1" />
+
+    <com.google.android.material.textfield.TextInputLayout
+
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:hint="Name"
+        android:inputType="text"
+        app:layout_constraintBottom_toTopOf="@id/h_guideline4"
+        app:layout_constraintEnd_toStartOf="@id/v_guideline2"
+        app:layout_constraintStart_toEndOf="@id/v_guideline1"
+        app:layout_constraintTop_toBottomOf="@id/h_guideline3"
+        app:startIconDrawable="@drawable/user_24"
+        tools:ignore="MissingConstraints">
+
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/namefield"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="text" />
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <com.google.android.material.textfield.TextInputLayout
+
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:hint="Email Address"
+        android:inputType="textWebEmailAddress"
+        app:layout_constraintBottom_toTopOf="@id/h_guideline6"
+        app:layout_constraintEnd_toStartOf="@id/v_guideline2"
+        app:layout_constraintStart_toEndOf="@id/v_guideline1"
+        app:layout_constraintTop_toBottomOf="@id/h_guideline5"
+        app:startIconDrawable="@drawable/baseline_email_24"
+        tools:ignore="MissingConstraints">
+
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/emailField"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="textWebEmailAddress" />
+    </com.google.android.material.textfield.TextInputLayout>
+    <com.google.android.material.textfield.TextInputLayout
+
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:hint="Contact No"
+        android:inputType="phone"
+        app:layout_constraintBottom_toTopOf="@id/h_guideline8"
+        app:layout_constraintEnd_toStartOf="@id/v_guideline2"
+        app:layout_constraintStart_toEndOf="@id/v_guideline1"
+        app:layout_constraintTop_toBottomOf="@id/h_guideline7"
+        app:startIconDrawable="@drawable/baseline_local_phone_24"
+        tools:ignore="MissingConstraints">
+
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/contactField"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="phone" />
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <com.google.android.material.textfield.TextInputLayout
+
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:hint="Password"
+        app:endIconMode="password_toggle"
+        app:layout_constraintBottom_toTopOf="@id/h_guideline10"
+        app:layout_constraintEnd_toStartOf="@id/v_guideline2"
+        app:layout_constraintStart_toEndOf="@id/v_guideline1"
+        app:layout_constraintTop_toBottomOf="@id/h_guideline9"
+        app:startIconDrawable="@drawable/password_24"
+        tools:ignore="MissingConstraints">
+
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/passwordField"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="textPassword" />
+
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <com.google.android.material.textfield.TextInputLayout
+
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:hint="Retype Password"
+        app:endIconMode="password_toggle"
+        app:layout_constraintBottom_toTopOf="@id/h_guideline12"
+        app:layout_constraintEnd_toStartOf="@id/v_guideline2"
+        app:layout_constraintStart_toEndOf="@id/v_guideline1"
+        app:layout_constraintTop_toBottomOf="@id/h_guideline11"
+        app:startIconDrawable="@drawable/password_24"
+        tools:ignore="MissingConstraints">
+
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/repasswordField"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="textPassword" />
+
+    </com.google.android.material.textfield.TextInputLayout>
+<!--    Next Button -->
+    <Button
+        android:id="@+id/signinbtn"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:enabled="false"
+        android:text="Next"
+        android:textSize="18sp"
+        app:layout_constraintBottom_toTopOf="@id/h_guideline16"
+        app:layout_constraintEnd_toStartOf="@id/v_guideline2"
+        app:layout_constraintStart_toEndOf="@id/v_guideline3"
+        app:layout_constraintTop_toBottomOf="@id/h_guideline15" />
+
+    <!-- Register TextView -->
+    <TextView
+        android:id="@+id/register"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:clickable="true"
+        android:text="Already have an account?"
+        android:textAlignment="textStart"
+        android:textColor="@color/md_theme_onPrimaryFixedVariant"
+        android:textSize="15sp"
+        app:layout_constraintBottom_toTopOf="@id/h_guideline13"
+        app:layout_constraintEnd_toStartOf="@id/v_guideline2"
+        app:layout_constraintStart_toEndOf="@id/v_guideline1"
+        app:layout_constraintTop_toBottomOf="@id/h_guideline12" />
 </androidx.constraintlayout.widget.ConstraintLayout>

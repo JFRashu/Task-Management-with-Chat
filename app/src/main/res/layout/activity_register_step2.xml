@@ -7,4 +7,141 @@
     android:layout_height="match_parent"
     tools:context=".registeractivities.RegisterStep2Activity">
 
+    <!-- Vertical Guidelines -->
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/v_guideline1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintGuide_percent=".1" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/v_guideline2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintGuide_percent=".9" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/v_guideline3"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintGuide_percent=".6" />
+
+    <!-- Horizontal Guidelines -->
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/h_guideline1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent=".1" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/h_guideline2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent=".2" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/h_guideline3"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent=".3" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/h_guideline4"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent=".4" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/h_guideline5"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent=".5" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/h_guideline6"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent=".7" />
+
+    <!-- Title Text -->
+    <TextView
+        android:id="@+id/textOtpTitle"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:padding="5dp"
+        android:text="OTP Verification"
+        android:textAlignment="center"
+        android:textColor="@color/md_theme_onPrimaryFixedVariant"
+        android:textSize="30sp"
+        android:textStyle="italic"
+        app:layout_constraintBottom_toTopOf="@id/h_guideline2"
+        app:layout_constraintEnd_toStartOf="@id/v_guideline2"
+        app:layout_constraintStart_toEndOf="@id/v_guideline1"
+        app:layout_constraintTop_toBottomOf="@id/h_guideline1" />
+
+    <!-- Instructions Text -->
+    <TextView
+        android:id="@+id/textOtpInstructions"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:text="Please enter the verification code sent to your email"
+        android:textAlignment="center"
+        android:textSize="16sp"
+        app:layout_constraintTop_toBottomOf="@id/h_guideline2"
+        app:layout_constraintStart_toEndOf="@id/v_guideline1"
+        app:layout_constraintEnd_toStartOf="@id/v_guideline2" />
+
+    <!-- OTP Input Field -->
+    <com.google.android.material.textfield.TextInputLayout
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:hint="Enter OTP"
+        app:layout_constraintBottom_toTopOf="@id/h_guideline4"
+        app:layout_constraintEnd_toStartOf="@id/v_guideline2"
+        app:layout_constraintStart_toEndOf="@id/v_guideline1"
+        app:layout_constraintTop_toBottomOf="@id/h_guideline3"
+        app:startIconDrawable="@drawable/password_24">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/otpField"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="number"
+            android:maxLength="6" />
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <!-- Verify Button -->
+    <Button
+        android:id="@+id/verifyButton"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:text="Verify"
+        android:textSize="18sp"
+        app:layout_constraintBottom_toTopOf="@id/h_guideline5"
+        app:layout_constraintEnd_toStartOf="@id/v_guideline2"
+        app:layout_constraintStart_toEndOf="@id/v_guideline3" />
+
+    <!-- Resend OTP Text -->
+    <TextView
+        android:id="@+id/resendOtp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:clickable="true"
+        android:text="Didn't receive the code? Resend"
+        android:textAlignment="center"
+        android:textColor="@color/md_theme_onPrimaryFixedVariant"
+
+        app:layout_constraintTop_toBottomOf="@id/h_guideline5"
+        app:layout_constraintStart_toEndOf="@id/v_guideline1"
+        app:layout_constraintEnd_toStartOf="@id/v_guideline2" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>

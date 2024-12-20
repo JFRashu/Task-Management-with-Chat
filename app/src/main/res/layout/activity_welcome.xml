@@ -7,6 +7,63 @@
     android:layout_height="match_parent"
     tools:context=".WelcomeActivity">
 
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/v_guideline1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintGuide_percent=".225" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/v_guideline2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintGuide_percent=".725" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/h_guideline1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent=".4" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/h_guideline2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent=".52" />
+
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/h_guideline3"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent=".59" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/h_guideline4"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent=".6" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/h_guideline5"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent=".67" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/h_guideline6"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent=".82" />
+
     <TextView
         android:id="@+id/textView"
         android:layout_width="182dp"
@@ -25,28 +82,27 @@
 
     <Button
         android:id="@+id/Loginbtn"
-        android:layout_width="180dp"
-        android:layout_height="50dp"
-        android:layout_marginTop="72dp"
-        android:text="Log In"
-        app:layout_constraintHorizontal_bias="0.502"
-        app:layout_constraintVertical_bias="0.65"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/textView" />
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:textSize="15sp"
+        android:textStyle="italic"
+        android:text="Log In To Account"
+        app:layout_constraintBottom_toTopOf="@id/h_guideline3"
+        app:layout_constraintEnd_toStartOf="@id/v_guideline2"
+        app:layout_constraintStart_toEndOf="@id/v_guideline1"
+        app:layout_constraintTop_toBottomOf="@id/h_guideline2" />
 
     <Button
         android:id="@+id/registerbtn"
-        android:layout_width="180dp"
-        android:layout_height="50dp"
-        android:layout_marginBottom="292dp"
-        android:text="Register"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.502"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/Loginbtn"
-        app:layout_constraintVertical_bias="0.6" />
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:textSize="15sp"
+        android:textStyle="italic"
+        android:text="Creat New Account"
+        app:layout_constraintBottom_toTopOf="@id/h_guideline5"
+        app:layout_constraintEnd_toStartOf="@id/v_guideline2"
+        app:layout_constraintStart_toEndOf="@id/v_guideline1"
+        app:layout_constraintTop_toBottomOf="@id/h_guideline4" />
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>
