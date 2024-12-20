@@ -2,61 +2,10 @@
 <androidx.constraintlayout.widget.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:padding="16dp">
 
-    <com.google.android.material.textfield.TextInputLayout
-        android:id="@+id/tilPhoneNumber"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:hint="Phone Number"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
-
-        <com.google.android.material.textfield.TextInputEditText
-            android:id="@+id/etPhoneNumber"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:inputType="phone"/>
-    </com.google.android.material.textfield.TextInputLayout>
-
-    <Button
-        android:id="@+id/btnSendOtp"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Send OTP"
-        android:layout_marginTop="16dp"
-        app:layout_constraintTop_toBottomOf="@id/tilPhoneNumber"/>
-
-    <LinearLayout
-        android:id="@+id/layoutOtpInput"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:visibility="gone"
-        android:layout_marginTop="24dp"
-        app:layout_constraintTop_toBottomOf="@id/btnSendOtp">
-
-        <com.google.android.material.textfield.TextInputLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Enter OTP">
-
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/etOtpCode"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:inputType="number"/>
-        </com.google.android.material.textfield.TextInputLayout>
-
-        <Button
-            android:id="@+id/btnVerifyOtp"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Verify OTP"
-            android:layout_marginTop="16dp"/>
-    </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
