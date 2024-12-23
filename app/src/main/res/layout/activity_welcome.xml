@@ -98,7 +98,7 @@
         android:layout_height="0dp"
         android:textSize="15sp"
         android:textStyle="italic"
-        android:text="Creat New Account"
+        android:text="Create New Account"
         app:layout_constraintBottom_toTopOf="@id/h_guideline5"
         app:layout_constraintEnd_toStartOf="@id/v_guideline2"
         app:layout_constraintStart_toEndOf="@id/v_guideline1"
