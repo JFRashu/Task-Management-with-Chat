@@ -157,6 +157,7 @@
         android:layout_height="0dp"
         android:hint="Name"
         android:inputType="text"
+        app:hintTextColor ="@color/md_theme_tertiaryFixed_highContrast"
         app:layout_constraintBottom_toTopOf="@id/h_guideline4"
         app:layout_constraintEnd_toStartOf="@id/v_guideline2"
         app:layout_constraintStart_toEndOf="@id/v_guideline1"
@@ -173,7 +174,7 @@
     </com.google.android.material.textfield.TextInputLayout>
 
     <com.google.android.material.textfield.TextInputLayout
-
+        app:hintTextColor ="@color/md_theme_tertiaryFixed_highContrast"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:hint="Email Address"
@@ -193,7 +194,7 @@
             android:inputType="textWebEmailAddress" />
     </com.google.android.material.textfield.TextInputLayout>
     <com.google.android.material.textfield.TextInputLayout
-
+        app:hintTextColor ="@color/md_theme_tertiaryFixed_highContrast"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:hint="Contact No"
@@ -214,7 +215,7 @@
     </com.google.android.material.textfield.TextInputLayout>
 
     <com.google.android.material.textfield.TextInputLayout
-
+        app:hintTextColor ="@color/md_theme_tertiaryFixed_highContrast"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:hint="Password"
@@ -236,7 +237,7 @@
     </com.google.android.material.textfield.TextInputLayout>
 
     <com.google.android.material.textfield.TextInputLayout
-
+        app:hintTextColor ="@color/md_theme_tertiaryFixed_highContrast"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:hint="Retype Password"

@@ -105,6 +105,7 @@
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:hint="Enter OTP"
+        app:hintTextColor ="@color/md_theme_tertiaryFixed_highContrast"
         app:layout_constraintBottom_toTopOf="@id/h_guideline4"
         app:layout_constraintEnd_toStartOf="@id/v_guideline2"
         app:layout_constraintStart_toEndOf="@id/v_guideline1"

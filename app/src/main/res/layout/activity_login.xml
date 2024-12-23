@@ -100,7 +100,7 @@
         app:layout_constraintTop_toBottomOf="@id/h_guideline1" />
 
     <com.google.android.material.textfield.TextInputLayout
-
+        app:hintTextColor ="@color/md_theme_tertiaryFixed_highContrast"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:hint="Email Address"
@@ -120,7 +120,7 @@
             android:inputType="textWebEmailAddress" />
     </com.google.android.material.textfield.TextInputLayout>
     <com.google.android.material.textfield.TextInputLayout
-
+        app:hintTextColor ="@color/md_theme_tertiaryFixed_highContrast"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:hint="Password"
