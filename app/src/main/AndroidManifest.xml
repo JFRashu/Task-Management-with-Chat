@@ -19,7 +19,7 @@
             android:name=".chatactivities.ChatActivity"
             android:exported="false" />
         <activity
-            android:name=".groupactivities.GroupActivity"
+            android:name=".SplashActivity"
             android:exported="false" />
         <activity
             android:name=".registeractivities.RegisterStep2Activity"
@@ -37,7 +37,7 @@
             android:name=".WelcomeActivity"
             android:exported="false" />
         <activity
-            android:name=".SplashActivity"
+            android:name=".groupactivities.GroupActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
