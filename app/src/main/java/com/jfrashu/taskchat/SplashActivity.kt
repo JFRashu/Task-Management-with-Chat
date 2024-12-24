@@ -18,6 +18,7 @@ class SplashActivity : AppCompatActivity() {
 
         binding = ActivitySplashBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
         // Add a delay of 2 seconds (2000 milliseconds)
         Handler(Looper.getMainLooper()).postDelayed({
             // Start the next activity
