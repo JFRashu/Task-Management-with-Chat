@@ -2,7 +2,7 @@
     android:width="400dp"
     android:height="800dp"
     android:viewportWidth="400"
-    android:viewportHeight="1500">
+    android:viewportHeight="1800">
     <!-- Wave Path -->
     <path
         android:fillColor="@color/md_theme_onPrimaryFixedVariant"

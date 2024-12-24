@@ -2,7 +2,7 @@
     android:width="400dp"
     android:height="800dp"
     android:viewportWidth="300"
-    android:viewportHeight="700">
+    android:viewportHeight="600">
     <!-- Wave Path -->
     <path
         android:fillColor="@color/md_theme_inversePrimary_highContrast"
