@@ -1,5 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <color name="choice1">#FF2196F3</color>  <!-- Example: Blue -->
+    <color name="choice2">#FF1976D2</color>  <!-- Example: Darker Blue -->
+    <color name="choice3">#FF1565C0</color>  <!-- Example: Even Darker Blue -->
+    <color name="secondary_text">#757575</color>
+
     <color name="md_theme_primary">#415F91</color>
     <color name="md_theme_onPrimary">#FFFFFF</color>
     <color name="md_theme_primaryContainer">#D6E3FF</color>

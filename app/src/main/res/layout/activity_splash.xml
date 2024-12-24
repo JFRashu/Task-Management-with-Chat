@@ -5,8 +5,11 @@
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+
     tools:context=".SplashActivity">
 
+
+    <!-- Content Layer -->
     <ImageView
         android:id="@+id/imageView"
         android:layout_width="240dp"
@@ -32,6 +35,5 @@
         app:layout_constraintTop_toBottomOf="@+id/imageView"
         app:layout_constraintVertical_bias="0.0" />
 
-
-
 </androidx.constraintlayout.widget.ConstraintLayout>
+
