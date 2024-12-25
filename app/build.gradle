@@ -50,6 +50,8 @@ dependencies {
     implementation("com.google.firebase:firebase-database")
 
 
+    implementation 'com.google.firebase:firebase-auth-ktx'
+    implementation 'com.google.firebase:firebase-firestore-ktx'
 
     implementation libs.androidx.core.ktx
     implementation libs.androidx.appcompat
