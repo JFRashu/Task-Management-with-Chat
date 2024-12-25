@@ -1,21 +1,99 @@
 package com.jfrashu.taskchat.profileactivities
 
 import android.os.Bundle
-import androidx.activity.enableEdgeToEdge
+import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
+import com.google.android.material.appbar.MaterialToolbar
+import com.google.android.material.button.MaterialButton
+import com.google.android.material.chip.Chip
+import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
+import com.google.android.material.textfield.TextInputEditText
+import com.google.firebase.firestore.FirebaseFirestore
 import com.jfrashu.taskchat.R
+import com.jfrashu.taskchat.dataclasses.User
 
+
+
+
+// MyProfileInfoActivity.kt
 class MyProfileInfoActivity : AppCompatActivity() {
+    private lateinit var displayNameInput: TextInputEditText
+    private lateinit var emailInput: TextInputEditText
+    private lateinit var statusChip: Chip
+    private lateinit var lastActiveText: TextView
+    private lateinit var saveFab: ExtendedFloatingActionButton
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
         setContentView(R.layout.activity_my_profile_info)
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
-            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
-            insets
+
+        initializeViews()
+        loadUserData()
+        setupSaveButton()
+
+        // Setup back button in toolbar
+        findViewById<MaterialToolbar>(R.id.toolbar).setNavigationOnClickListener {
+            finish()
+        }
+    }
+
+    private fun initializeViews() {
+        displayNameInput = findViewById(R.id.displayNameInput)
+        emailInput = findViewById(R.id.emailInput)
+        statusChip = findViewById(R.id.statusChip)
+        lastActiveText = findViewById(R.id.lastActiveText)
+        saveFab = findViewById(R.id.saveFab)
+    }
+
+    private fun loadUserData() {
+        intent.extras?.let { bundle ->
+            displayNameInput.setText(bundle.getString("displayName"))
+            emailInput.setText(bundle.getString("email"))
+            statusChip.text = bundle.getString("status", "online")
+
+            val lastActive = bundle.getLong("lastActive")
+            lastActiveText.text = "Last active: ${getTimeAgo(lastActive)}"
+        }
+    }
+
+    private fun setupSaveButton() {
+        saveFab.setOnClickListener {
+            val updatedUser = User(
+                userId = intent.getStringExtra("userId") ?: "",
+                email = emailInput.text.toString(),
+                displayName = displayNameInput.text.toString(),
+                status = statusChip.text.toString(),
+                lastActive = System.currentTimeMillis()
+            )
+
+            updateUserProfile(updatedUser)
+        }
+    }
+
+    private fun updateUserProfile(user: User) {
+        FirebaseFirestore.getInstance()
+            .collection("users")
+            .document(user.userId)
+            .set(user)
+            .addOnSuccessListener {
+                Toast.makeText(this, "Profile updated successfully",
+                    Toast.LENGTH_SHORT).show()
+                finish()
+            }
+            .addOnFailureListener { e ->
+                Toast.makeText(this, "Error updating profile: ${e.message}",
+                    Toast.LENGTH_SHORT).show()
+            }
+    }
+
+    private fun getTimeAgo(timestamp: Long): String {
+        val difference = System.currentTimeMillis() - timestamp
+        return when {
+            difference < 1000 * 60 -> "Just now"
+            difference < 1000 * 60 * 60 -> "${difference / (1000 * 60)} minutes ago"
+            difference < 1000 * 60 * 60 * 24 -> "${difference / (1000 * 60 * 60)} hours ago"
+            else -> "${difference / (1000 * 60 * 60 * 24)} days ago"
         }
     }
 }

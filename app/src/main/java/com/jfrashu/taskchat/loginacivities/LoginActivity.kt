@@ -13,6 +13,7 @@ import com.jfrashu.taskchat.databinding.ActivityLoginBinding
 import com.jfrashu.taskchat.registeractivities.RegisterStep1Activity
 import android.content.SharedPreferences
 import androidx.appcompat.app.AlertDialog
+import com.jfrashu.taskchat.groupactivities.GroupActivity
 
 class LoginActivity : AppCompatActivity() {
     private lateinit var binding: ActivityLoginBinding
@@ -96,7 +97,7 @@ class LoginActivity : AppCompatActivity() {
                             updateUserStatus(user.uid, "online")
                             showToast("You Have Successfully Logged In")
                             // Navigate to Welcome Activity
-                            startActivity(Intent(this, WelcomeActivity::class.java))
+                            startActivity(Intent(this, GroupActivity::class.java))
                             finish()
                         } else {
                             showEmailVerificationDialog(user.email ?: "")
