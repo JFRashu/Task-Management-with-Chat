@@ -1,49 +1,60 @@
-<?xml version="1.0" encoding="utf-8"?>
+
 <com.google.android.material.card.MaterialCardView
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_margin="8dp">
+    android:layout_marginHorizontal="8dp"
+    android:layout_marginVertical="4dp">
 
-    <LinearLayout
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
         android:padding="16dp">
 
         <TextView
-            android:id="@+id/invitedByText"
-            android:layout_width="match_parent"
+            android:id="@+id/groupName"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:textAppearance="?attr/textAppearanceSubtitle1"/>
+            android:textSize="16sp"
+            android:textStyle="bold"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:text="Group Name" />
 
         <TextView
-            android:id="@+id/timestampText"
-            android:layout_width="match_parent"
+            android:id="@+id/invitedBy"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:textAppearance="?attr/textAppearanceCaption"/>
+            android:layout_marginTop="4dp"
+            android:textSize="14sp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/groupName"
+            tools:text="Invited by: John Doe" />
 
-        <LinearLayout
-            android:layout_width="match_parent"
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/acceptButton"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:orientation="horizontal">
+            android:text="Accept"
+            app:layout_constraintEnd_toStartOf="@id/rejectButton"
+            app:layout_constraintTop_toBottomOf="@id/invitedBy" />
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/acceptButton"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginEnd="8dp"
-                android:text="Accept"
-                style="@style/Widget.Material3.Button.TonalButton"/>
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/rejectButton"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Reject"
+            android:textColor="?attr/colorError"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="@id/acceptButton" />
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/rejectButton"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Reject"
-                style="@style/Widget.Material3.Button.OutlinedButton"/>
-        </LinearLayout>
-    </LinearLayout>
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
 </com.google.android.material.card.MaterialCardView>

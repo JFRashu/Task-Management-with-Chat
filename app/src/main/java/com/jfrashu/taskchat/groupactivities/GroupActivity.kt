@@ -15,6 +15,7 @@ import com.jfrashu.taskchat.profileactivities.MyProfileInfoActivity
 
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.firebase.firestore.ktx.toObject
 import com.jfrashu.taskchat.dataclasses.Group
 
@@ -36,6 +37,13 @@ class GroupActivity : AppCompatActivity() {
                 fetchAndNavigateToProfile(user.uid)
             }
         }
+
+        val creategroupbtn = findViewById<FloatingActionButton>(R.id.createGroupbtn)
+        creategroupbtn.setOnClickListener {
+            val intent = Intent(this, CreateGroupActivity::class.java)
+            startActivity(intent)
+        }
+
         setupRecyclerView()
         fetchUserGroups()
     }
