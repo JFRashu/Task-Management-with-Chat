@@ -19,6 +19,7 @@ import com.jfrashu.taskchat.dataclasses.User
 import com.jfrashu.taskchat.users.UserAdapter
 
 class CreateGroupActivity : AppCompatActivity() {
+
     private lateinit var binding: ActivityCreateGroupBinding
     private val auth: FirebaseAuth = Firebase.auth
     private val db: FirebaseFirestore = Firebase.firestore
@@ -43,7 +44,6 @@ class CreateGroupActivity : AppCompatActivity() {
 
     private fun setupRecyclerView() {
         userAdapter = UserAdapter { user ->
-            // Enable create button if at least one user is selected
             binding.createButton.isEnabled = userAdapter.getSelectedUsers().isNotEmpty()
             updateSelectedUsersCount()
         }
@@ -53,7 +53,6 @@ class CreateGroupActivity : AppCompatActivity() {
             adapter = userAdapter
         }
 
-        // Initially load all users
         loadAllUsers()
     }
 
@@ -66,7 +65,6 @@ class CreateGroupActivity : AppCompatActivity() {
     private fun setupUserSearch() {
         binding.searchUserInput.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
                 val searchText = s?.toString()?.trim()?.lowercase() ?: ""
                 filterUsers(searchText)
@@ -85,8 +83,7 @@ class CreateGroupActivity : AppCompatActivity() {
             .addOnSuccessListener { documents ->
                 allUsers = documents.mapNotNull { doc ->
                     doc.toObject(User::class.java)
-                }.filter { it.userId != currentUserId }
-                    .toMutableList()
+                }.filter { it.userId != currentUserId }.toMutableList()
 
                 updateUsersList(allUsers)
                 binding.loadingIndicator.visibility = View.GONE
@@ -104,8 +101,7 @@ class CreateGroupActivity : AppCompatActivity() {
         }
 
         val filteredUsers = allUsers.filter { user ->
-            user.email.lowercase().contains(query) ||
-                    user.displayName.lowercase().contains(query)
+            user.email.lowercase().contains(query) || user.displayName.lowercase().contains(query)
         }
         updateUsersList(filteredUsers)
     }
@@ -168,30 +164,22 @@ class CreateGroupActivity : AppCompatActivity() {
     }
 
     private fun createGroup(name: String, description: String) {
-        val currentUser = auth.currentUser ?: return
-        binding.loadingIndicator.visibility = View.VISIBLE
-        binding.createButton.isEnabled = false
-
-        val selectedUsers = userAdapter.getSelectedUsers()
-        val validSelectedUsers = selectedUsers.filter { selectedId ->
-            allUsers.any { it.userId == selectedId }
-        }.toSet()
-
-        if (validSelectedUsers.size != selectedUsers.size) {
-            Toast.makeText(this, "Some selected users are invalid", Toast.LENGTH_SHORT).show()
-            binding.loadingIndicator.visibility = View.GONE
-            binding.createButton.isEnabled = true
+        val currentUserUid = auth.currentUser?.uid ?: run {
+            Toast.makeText(this, "User not logged in", Toast.LENGTH_SHORT).show()
             return
         }
 
-        val allMembers = validSelectedUsers.toMutableList().apply { add(currentUser.uid) }
+        binding.loadingIndicator.visibility = View.VISIBLE
+        binding.createButton.isEnabled = false
+
+        val selectedUsers = userAdapter.getSelectedUsers().toSet()
 
         val group = Group(
             groupId = db.collection("groups").document().id,
             name = name,
             description = description,
-            adminId = currentUser.uid,
-            members = allMembers,
+            adminId = currentUserUid,
+            members = mutableListOf(), // Empty member list initially
             createdAt = System.currentTimeMillis(),
             lastActivity = System.currentTimeMillis()
         )
@@ -200,9 +188,7 @@ class CreateGroupActivity : AppCompatActivity() {
             .document(group.groupId)
             .set(group)
             .addOnSuccessListener {
-                createInvitations(group.groupId, validSelectedUsers)
-                Toast.makeText(this, "Group created successfully", Toast.LENGTH_SHORT).show()
-                finish()
+                createInvitations(group.groupId, selectedUsers)
             }
             .addOnFailureListener { e ->
                 Toast.makeText(this, "Failed to create group: ${e.message}", Toast.LENGTH_SHORT).show()
@@ -212,26 +198,45 @@ class CreateGroupActivity : AppCompatActivity() {
     }
 
     private fun createInvitations(groupId: String, selectedUsers: Set<String>) {
-        val currentUser = auth.currentUser?.uid ?: return
+        val currentUserUid = auth.currentUser?.uid ?: run {
+            Toast.makeText(this, "User not logged in", Toast.LENGTH_SHORT).show()
+            return
+        }
+
         val batch = db.batch()
 
         selectedUsers.forEach { userId ->
-            val invitationRef = db.collection("groupInvitations").document()
-            val invitation = GroupInvitation(
-                invitationId = invitationRef.id,
-                groupId = groupId,
-                invitedBy = currentUser,
-                invitedUser = userId,
-                status = "pending",
-                timestamp = System.currentTimeMillis()
-            )
-            batch.set(invitationRef, invitation)
+            db.collection("groupInvitations")
+                .whereEqualTo("groupId", groupId)
+                .whereEqualTo("invitedUser", userId)
+                .get()
+                .addOnCompleteListener { task ->
+                    if (task.isSuccessful && task.result.isEmpty) {
+                        val invitationRef = db.collection("groupInvitations").document()
+                        val invitation = GroupInvitation(
+                            invitationId = invitationRef.id,
+                            groupId = groupId,
+                            invitedBy = currentUserUid,
+                            invitedUser = userId,
+                            status = "pending",
+                            timestamp = System.currentTimeMillis()
+                        )
+                        batch.set(invitationRef, invitation)
+                    }
+                }
         }
 
         batch.commit()
+            .addOnSuccessListener {
+                Toast.makeText(this, "Invitations sent successfully", Toast.LENGTH_SHORT).show()
+            }
             .addOnFailureListener { e ->
-                Toast.makeText(this, "Failed to send some invitations: ${e.message}",
-                    Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "Failed to send some invitations: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
+            .addOnCompleteListener {
+                binding.loadingIndicator.visibility = View.GONE
+                binding.createButton.isEnabled = true
+                finish()
             }
     }
 }

@@ -4,6 +4,7 @@ package com.jfrashu.taskchat.groupactivities
 import android.content.Intent
 import android.os.Bundle
 import android.widget.ImageButton
+import android.widget.ImageView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.widget.NestedScrollView
@@ -43,6 +44,13 @@ class GroupActivity : AppCompatActivity() {
             val intent = Intent(this, CreateGroupActivity::class.java)
             startActivity(intent)
         }
+
+        val seeRequestsbtn = findViewById<ImageButton>(R.id.groupRequestsButton)
+        seeRequestsbtn.setOnClickListener {
+            val intent = Intent(this, GroupInvitationActivity::class.java)
+            startActivity(intent)
+        }
+
 
         setupRecyclerView()
         fetchUserGroups()

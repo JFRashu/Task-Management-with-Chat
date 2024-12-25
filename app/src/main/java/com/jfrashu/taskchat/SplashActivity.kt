@@ -4,27 +4,41 @@ import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.util.Log
-import android.view.LayoutInflater
-import android.view.View
 import androidx.appcompat.app.AppCompatActivity
+import com.google.firebase.auth.FirebaseAuth
 import com.jfrashu.taskchat.databinding.ActivitySplashBinding
+import com.jfrashu.taskchat.groupactivities.GroupActivity
+import com.jfrashu.taskchat.loginacivities.LoginActivity
 
 class SplashActivity : AppCompatActivity() {
     private lateinit var binding: ActivitySplashBinding
+    private lateinit var auth: FirebaseAuth
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
         binding = ActivitySplashBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        // Add a delay of 2 seconds (2000 milliseconds)
+        auth = FirebaseAuth.getInstance()
+
         Handler(Looper.getMainLooper()).postDelayed({
-            // Start the next activity
-            val intent = Intent(this, WelcomeActivity::class.java) // Replace 'NextActivity' with your target activity
-            startActivity(intent)
-            finish() // Close the WelcomeActivity to remove it from the back stack
-        }, 2000) // 2000 milliseconds = 2 seconds
+            checkUserLoginStatus()
+        }, 2000)
+    }
+
+    private fun checkUserLoginStatus() {
+        val currentUser = auth.currentUser
+
+        val intent = when {
+            currentUser != null && currentUser.isEmailVerified -> {
+                Intent(this, GroupActivity::class.java)
+            }
+            else -> {
+                Intent(this, WelcomeActivity::class.java)
+            }
+        }
+
+        startActivity(intent)
+        finish()
     }
 }

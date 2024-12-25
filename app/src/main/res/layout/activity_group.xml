@@ -65,7 +65,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginHorizontal="8dp"
-                android:hint="Search Task"
+                android:hint="Search Group"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toStartOf="@id/groupRequestsButton"
                 app:layout_constraintStart_toEndOf="@id/menuButton"

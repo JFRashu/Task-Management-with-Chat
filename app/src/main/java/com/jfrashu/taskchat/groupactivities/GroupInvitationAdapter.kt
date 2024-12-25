@@ -12,23 +12,12 @@ import com.jfrashu.taskchat.dataclasses.GroupInvitationWithDetails
 class GroupInvitationAdapter(
     private val onAccept: (GroupInvitation) -> Unit,
     private val onReject: (GroupInvitation) -> Unit
-) : ListAdapter<GroupInvitationWithDetails, GroupInvitationAdapter.ViewHolder>(InvitationDiffCallback()) {
+) : ListAdapter<GroupInvitationWithDetails, GroupInvitationAdapter.ViewHolder>(DiffCallback()) {
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-        val binding = ItemGroupInvitationBinding.inflate(
-            LayoutInflater.from(parent.context),
-            parent,
-            false
-        )
-        return ViewHolder(binding)
-    }
-
-    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        holder.bind(getItem(position))
-    }
-
-    inner class ViewHolder(
-        private val binding: ItemGroupInvitationBinding
+    class ViewHolder(
+        private val binding: ItemGroupInvitationBinding,
+        private val onAccept: (GroupInvitation) -> Unit,
+        private val onReject: (GroupInvitation) -> Unit
     ) : RecyclerView.ViewHolder(binding.root) {
 
         fun bind(item: GroupInvitationWithDetails) {
@@ -36,23 +25,28 @@ class GroupInvitationAdapter(
                 groupName.text = item.groupName
                 invitedBy.text = "Invited by: ${item.inviterName}"
 
-                acceptButton.setOnClickListener {
-                    onAccept(item.invitation)
-                }
-                rejectButton.setOnClickListener {
-                    onReject(item.invitation)
-                }
+                acceptButton.setOnClickListener { onAccept(item.invitation) }
+                rejectButton.setOnClickListener { onReject(item.invitation) }
             }
         }
     }
 
-    private class InvitationDiffCallback : DiffUtil.ItemCallback<GroupInvitationWithDetails>() {
-        override fun areItemsTheSame(oldItem: GroupInvitationWithDetails, newItem: GroupInvitationWithDetails): Boolean {
-            return oldItem.invitation.invitationId == newItem.invitation.invitationId
-        }
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+        val binding = ItemGroupInvitationBinding.inflate(
+            LayoutInflater.from(parent.context), parent, false
+        )
+        return ViewHolder(binding, onAccept, onReject)
+    }
 
-        override fun areContentsTheSame(oldItem: GroupInvitationWithDetails, newItem: GroupInvitationWithDetails): Boolean {
-            return oldItem == newItem
-        }
+    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+        holder.bind(getItem(position))
+    }
+
+    private class DiffCallback : DiffUtil.ItemCallback<GroupInvitationWithDetails>() {
+        override fun areItemsTheSame(oldItem: GroupInvitationWithDetails, newItem: GroupInvitationWithDetails) =
+            oldItem.invitation.invitationId == newItem.invitation.invitationId
+
+        override fun areContentsTheSame(oldItem: GroupInvitationWithDetails, newItem: GroupInvitationWithDetails) =
+            oldItem == newItem
     }
 }
