@@ -13,6 +13,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import com.jfrashu.taskchat.R
+import com.jfrashu.taskchat.chatactivities.ChatActivity
 import com.jfrashu.taskchat.dataclasses.Task
 import com.jfrashu.taskchat.groupactivities.GroupInfoActivity
 
@@ -98,14 +99,11 @@ class TaskActivity : AppCompatActivity() {
                 .addOnSuccessListener { documentSnapshot ->
                     documentSnapshot.toObject(Task::class.java)?.let { task ->
                         // Navigate to TaskInfoActivity with the task details
-                        val intent = Intent(this, TaskInfoActivity::class.java).apply {
-                            putExtra("taskId", task.taskId)
-                            putExtra("groupId", gId)
-                            putExtra("isAdmin", isAdmin)
-                            putExtra("title", task.title)
-                            putExtra("description", task.description)
-                            putExtra("status", task.status)
+                        val intent = Intent(this, ChatActivity::class.java).apply {
+                            putExtra("groupId", gId)  // Pass the groupId
+                            putExtra("taskId", taskId)  // Pass the taskId
                         }
+                        startActivity(intent)
                         startActivity(intent)
                     } ?: run {
                         Toast.makeText(this, "Task not found", Toast.LENGTH_SHORT).show()
