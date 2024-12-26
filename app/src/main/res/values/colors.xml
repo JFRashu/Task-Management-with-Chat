@@ -5,6 +5,15 @@
     <color name="choice3">#FF1565C0</color>  <!-- Example: Even Darker Blue -->
     <color name="secondary_text">#757575</color>
 
+<!--    task status-->
+
+    <color name="pending_status">#FFA000</color>
+    <color name="in_progress_status">#1976D2</color>
+    <color name="completed_status">#388E3C</color>
+    <color name="default_status">#757575</color>
+
+<!--    rest of the colors-->
+
     <color name="md_theme_primary">#415F91</color>
     <color name="md_theme_onPrimary">#FFFFFF</color>
     <color name="md_theme_primaryContainer">#D6E3FF</color>

@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginVertical="4dp"
+    app:cardElevation="0dp"
+    style="@style/Widget.Material3.CardView.Elevated">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="16dp">
+
+        <!-- Avatar/Icon -->
+        <com.google.android.material.imageview.ShapeableImageView
+            android:id="@+id/memberAvatar"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="?attr/colorSecondaryContainer"
+            android:padding="8dp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:shapeAppearance="@style/ShapeAppearance.Material3.Corner.Full"
+            android:src="@drawable/baseline_person_24"
+            app:tint="?attr/colorOnSecondaryContainer" />
+
+        <!-- Member Name -->
+        <TextView
+            android:id="@+id/memberNameText"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="8dp"
+            android:textAppearance="?attr/textAppearanceBodyLarge"
+            app:layout_constraintEnd_toStartOf="@+id/removeMemberButton"
+            app:layout_constraintStart_toEndOf="@+id/memberAvatar"
+            app:layout_constraintTop_toTopOf="@+id/memberAvatar"
+            tools:text="John Doe" />
+
+        <!-- Member Email -->
+        <TextView
+            android:id="@+id/memberEmailText"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="8dp"
+            android:textAppearance="?attr/textAppearanceBodyMedium"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            app:layout_constraintEnd_toStartOf="@+id/removeMemberButton"
+            app:layout_constraintStart_toEndOf="@+id/memberAvatar"
+            app:layout_constraintTop_toBottomOf="@+id/memberNameText"
+            tools:text="john.doe@example.com" />
+
+        <!-- Remove Member Button -->
+        <ImageButton
+            android:id="@+id/removeMemberButton"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Remove member"
+            android:src="@drawable/baseline_person_remove_24"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:tint="?attr/colorError" />
+
+        <!-- Online Status Indicator (Optional) -->
+        <TextView
+            android:id="@+id/statusText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:textAppearance="?attr/textAppearanceBodySmall"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            app:layout_constraintStart_toStartOf="@+id/memberEmailText"
+            app:layout_constraintTop_toBottomOf="@+id/memberEmailText"
+            tools:text="Last active: 2 hours ago" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</com.google.android.material.card.MaterialCardView>

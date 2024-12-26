@@ -19,6 +19,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.firebase.firestore.ktx.toObject
 import com.jfrashu.taskchat.dataclasses.Group
+import com.jfrashu.taskchat.taskactivities.TaskActivity
 
 class GroupActivity : AppCompatActivity() {
     private lateinit var db: FirebaseFirestore
@@ -77,10 +78,17 @@ class GroupActivity : AppCompatActivity() {
     }
 
     private fun setupRecyclerView() {
-        recyclerView =findViewById(R.id.groupRecyclerView)
+        recyclerView = findViewById(R.id.groupRecyclerView)
         groupAdapter = GroupAdapter(emptyList()) { group ->
-            // Handle group click
-            // You can navigate to group details activity here
+            // Navigate to TaskActivity when a group is clicked
+            val intent = Intent(this, TaskActivity::class.java).apply {
+                putExtra("groupId", group.groupId)
+                putExtra("groupName", group.name)
+                // Check if current user is admin
+                val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
+                putExtra("isAdmin", currentUserId == group.adminId)
+            }
+            startActivity(intent)
         }
         recyclerView.apply {
             layoutManager = LinearLayoutManager(this@GroupActivity)
