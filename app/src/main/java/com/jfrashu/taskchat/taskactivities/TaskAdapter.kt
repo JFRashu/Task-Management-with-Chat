@@ -1,5 +1,6 @@
 package com.jfrashu.taskchat.taskactivities
 
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -68,6 +69,7 @@ class TaskAdapter(
 
         // Set click listener
         holder.itemView.setOnClickListener { onTaskClick(task) }
+        Log.d("TaskAdapter", "Binding task at position $position: ${task.title}")
     }
 
     override fun getItemCount() = tasks.size
@@ -75,5 +77,6 @@ class TaskAdapter(
     fun updateTasks(newTasks: List<Task>) {
         tasks = newTasks
         notifyDataSetChanged()
+        Log.d("TaskAdapter", "Updated adapter with ${tasks.size} tasks")
     }
 }

@@ -66,7 +66,7 @@ class CreateTaskActivity : AppCompatActivity() {
         val currentUser = auth.currentUser ?: return
 
         val task = Task(
-            taskId = db.collection("tasks").document().id,
+            taskId = db.collection("groups").document(groupId).collection("tasks").document().id, // Generate ID within the group's tasks collection
             groupId = groupId,
             title = title,
             description = description,
@@ -74,8 +74,7 @@ class CreateTaskActivity : AppCompatActivity() {
             status = "pending"
         )
 
-        db.collection("tasks")
-            .document(task.taskId)
+        db.collection("groups").document(groupId).collection("tasks").document(task.taskId)
             .set(task)
             .addOnSuccessListener {
                 Toast.makeText(this, "Task created successfully", Toast.LENGTH_SHORT).show()

@@ -2,6 +2,7 @@ package com.jfrashu.taskchat.taskactivities
 
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.widget.ImageButton
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -134,8 +135,13 @@ class TaskActivity : AppCompatActivity() {
                     } ?: emptyList()
 
                     taskAdapter.updateTasks(tasks)
+                    Log.d("TaskActivity", "Fetched ${tasks.size} tasks, groupId: ${gId}") // Log the number of tasks
+                    tasks.forEach { task -> // Log each task's details
+                        Log.d("TaskActivity", "Task: ${task.title}, ${task.description}, ${task.status}, groupId: ${task.groupId}")
+                    }
                 }
         }
+
     }
     override fun onResume() {
         super.onResume()
