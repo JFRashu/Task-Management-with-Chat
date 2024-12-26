@@ -3,10 +3,8 @@ package com.jfrashu.taskchat.taskactivities
 import android.os.Bundle
 import android.text.format.DateUtils
 import android.widget.TextView
-import androidx.activity.enableEdgeToEdge
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.button.MaterialButtonToggleGroup
 import com.google.android.material.chip.Chip
@@ -25,17 +23,26 @@ class TaskInfoActivity : AppCompatActivity() {
     private lateinit var lastActivityText: TextView
     private lateinit var toolbar: MaterialToolbar
 
+    private var groupId: String? = null
+    private var taskId: String? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_task_info)
 
+        groupId = intent.getStringExtra("groupId")
+        taskId = intent.getStringExtra("taskId")
+
+        if (groupId == null || taskId == null) {
+            Toast.makeText(this, "Error: Task information not found", Toast.LENGTH_SHORT).show()
+            finish()
+            return
+        }
+
         initializeViews()
         setupToolbar()
         setupStatusToggle()
-
-        // Get task data from intent
-        val taskId = intent.getStringExtra("taskId") ?: return
-        loadTaskData(taskId)
+        loadTaskData(groupId!!, taskId!!)
     }
 
     private fun initializeViews() {
@@ -68,29 +75,39 @@ class TaskInfoActivity : AppCompatActivity() {
         }
     }
 
-    private fun loadTaskData(taskId: String) {
-        // Example using Firebase
+    private fun loadTaskData(groupId: String, taskId: String) {
         FirebaseFirestore.getInstance()
+            .collection("groups")
+            .document(groupId)
             .collection("tasks")
             .document(taskId)
             .get()
             .addOnSuccessListener { document ->
-                document.toObject(Task::class.java)?.let { task ->
-                    updateUI(task)
+                if (document != null && document.exists()) {
+                    document.toObject(Task::class.java)?.let { task ->
+                        updateUI(task)
+                    }
+                } else {
+                    Toast.makeText(this, "Task not found", Toast.LENGTH_SHORT).show()
+                    finish()
                 }
+            }
+            .addOnFailureListener { e ->
+                Toast.makeText(this, "Error loading task: ${e.message}", Toast.LENGTH_SHORT).show()
+                finish()
             }
     }
 
     private fun updateUI(task: Task) {
         taskTitleText.text = task.title
         descriptionText.text = task.description
-        lastMessageText.text = "Last message: ${task.lastMessage}"
+        lastMessageText.text = "Last message: ${if (task.lastMessage.isNotEmpty()) task.lastMessage else "No messages yet"}"
         createdByText.text = "Created by: ${task.createdBy}"
         createdAtText.text = "Created: ${DateUtils.getRelativeTimeSpanString(task.createdAt)}"
         lastActivityText.text = "Last activity: ${DateUtils.getRelativeTimeSpanString(task.lastActivity)}"
 
         // Update status chip and toggle
-        statusChip.text = task.status.replace("_", " ").capitalize()
+        statusChip.text = task.status.replace("_", " ").replaceFirstChar { it.uppercase() }
         when (task.status) {
             "pending" -> statusToggleGroup.check(R.id.pendingButton)
             "in_progress" -> statusToggleGroup.check(R.id.inProgressButton)
@@ -99,9 +116,12 @@ class TaskInfoActivity : AppCompatActivity() {
     }
 
     private fun updateTaskStatus(newStatus: String) {
-        val taskId = intent.getStringExtra("taskId") ?: return
+        val groupId = this.groupId ?: return
+        val taskId = this.taskId ?: return
 
         FirebaseFirestore.getInstance()
+            .collection("groups")
+            .document(groupId)
             .collection("tasks")
             .document(taskId)
             .update(
@@ -110,8 +130,13 @@ class TaskInfoActivity : AppCompatActivity() {
                     "lastActivity" to System.currentTimeMillis()
                 )
             )
-
-        // Update status chip
-        statusChip.text = newStatus.replace("_", " ").capitalize()
+            .addOnSuccessListener {
+                statusChip.text = newStatus.replace("_", " ").replaceFirstChar { it.uppercase() }
+                Toast.makeText(this, "Status updated successfully", Toast.LENGTH_SHORT).show()
+            }
+            .addOnFailureListener { e ->
+                Toast.makeText(this, "Failed to update status: ${e.message}", Toast.LENGTH_SHORT).show()
+                loadTaskData(groupId, taskId)
+            }
     }
 }

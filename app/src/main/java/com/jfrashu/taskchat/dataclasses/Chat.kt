@@ -2,11 +2,11 @@ package com.jfrashu.taskchat.dataclasses
 
 data class Chat(
     val messageId: String = "",
-    val taskId: String = "", // ID of the task this chat belongs to
-    val senderId: String = "", // userId of sender
+    val taskId: String = "",
+    val senderId: String = "",
     val content: String = "",
-    val timestamp: Long = System.currentTimeMillis(),
-    val type: String = "text", // text, image, file
-    val attachmentUrl: String = "" // URL for attachments if any
+    val timestamp: Long = 0L,
+    val type: String = "text",
+    val attachmentUrl: String = "",
+    val isDeleted: Boolean = false  // Add this field
 )
-
