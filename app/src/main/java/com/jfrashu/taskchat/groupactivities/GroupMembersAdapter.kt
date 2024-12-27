@@ -2,10 +2,7 @@ package com.jfrashu.taskchat.groupactivities
 
 import android.content.res.ColorStateList
 import android.view.LayoutInflater
-import android.view.View
 import android.view.ViewGroup
-import android.widget.ImageButton
-import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.RecyclerView
@@ -17,7 +14,7 @@ class GroupMembersAdapter(
     private var members: List<User>,
     private val currentUserIsAdmin: Boolean,
     private val groupAdminId: String,
-    private val onMemberClick: (String) -> Unit
+    private val onMemberRemove: (String) -> Unit
 ) : RecyclerView.Adapter<GroupMembersAdapter.MemberViewHolder>() {
 
     inner class MemberViewHolder(private val binding: ItemGroupMemberBinding) :
@@ -50,7 +47,14 @@ class GroupMembersAdapter(
                 }
 
                 // Show remove button only if current user is admin and target user is not group admin
-                removeMemberButton.isVisible = currentUserIsAdmin && !isGroupAdmin
+                removeMemberButton.apply {
+                    isVisible = currentUserIsAdmin && !isGroupAdmin
+                    setOnClickListener {
+                        if (currentUserIsAdmin && !isGroupAdmin) {
+                            onMemberRemove(user.userId)
+                        }
+                    }
+                }
 
                 // Configure avatar based on admin status
                 memberAvatar.apply {

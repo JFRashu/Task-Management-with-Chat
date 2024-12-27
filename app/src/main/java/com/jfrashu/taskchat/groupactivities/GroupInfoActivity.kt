@@ -140,9 +140,8 @@ class GroupInfoActivity : AppCompatActivity() {
             currentUserIsAdmin = isAdmin,
             groupAdminId = group.adminId
         ) { userId ->
-            if (isAdmin) {
-                removeMember(userId)
-            }
+            // This is the member removal callback
+            removeMember(userId)
         }
 
         membersRecyclerView.apply {
