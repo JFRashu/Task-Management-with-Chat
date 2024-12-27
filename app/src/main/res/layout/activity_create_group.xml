@@ -85,27 +85,63 @@
                 tools:text="Selected users: 0"
                 tools:visibility="visible" />
 
-            <FrameLayout
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp">
+                android:layout_marginTop="8dp"
+                android:orientation="vertical">
+
+                <!-- Selected Users Section -->
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Selected Users"
+                    android:textStyle="bold"
+                    android:layout_marginBottom="8dp"
+                    android:textSize="16sp"/>
 
                 <androidx.recyclerview.widget.RecyclerView
-                    android:id="@+id/usersRecyclerView"
+                    android:id="@+id/selectedUsersRecyclerView"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:minHeight="60dp"
+                    android:visibility="gone"
+                    tools:visibility="visible" />
+
+                <TextView
+                    android:id="@+id/noSelectedUsersText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:padding="8dp"
+                    android:text="No users selected"
+                    android:visibility="visible"/>
+
+                <!-- Available Users Section -->
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Available Users"
+                    android:textStyle="bold"
+                    android:layout_marginTop="16dp"
+                    android:layout_marginBottom="8dp"
+                    android:textSize="16sp"/>
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/availableUsersRecyclerView"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:visibility="gone"
                     tools:visibility="visible" />
 
                 <TextView
-                    android:id="@+id/noUsersText"
+                    android:id="@+id/noAvailableUsersText"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:gravity="center"
-                    android:padding="16dp"
+                    android:padding="8dp"
                     android:text="No users found"
-                    android:visibility="gone"
-                    tools:visibility="visible" />
+                    android:visibility="gone"/>
 
                 <ProgressBar
                     android:id="@+id/loadingIndicator"
@@ -115,7 +151,7 @@
                     android:visibility="gone"
                     tools:visibility="visible" />
 
-            </FrameLayout>
+            </LinearLayout>
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/createButton"

@@ -23,8 +23,10 @@ class CreateGroupActivity : AppCompatActivity() {
     private lateinit var binding: ActivityCreateGroupBinding
     private val auth: FirebaseAuth = Firebase.auth
     private val db: FirebaseFirestore = Firebase.firestore
-    private lateinit var userAdapter: UserAdapter
+    private lateinit var availableUsersAdapter: UserAdapter
+    private lateinit var selectedUsersAdapter: UserAdapter
     private var allUsers = mutableListOf<User>()
+    private var selectedUsers = mutableSetOf<String>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -32,46 +34,100 @@ class CreateGroupActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         setupToolbar()
-        setupRecyclerView()
+        setupRecyclerViews()
         setupUserSearch()
         setupCreateButton()
         clearErrors()
     }
 
-    private fun setupToolbar() {
-        binding.toolbar.setNavigationOnClickListener { finish() }
-    }
-
-    private fun setupRecyclerView() {
-        userAdapter = UserAdapter { user ->
-            binding.createButton.isEnabled = userAdapter.getSelectedUsers().isNotEmpty()
-            updateSelectedUsersCount()
+    private fun setupRecyclerViews() {
+        // Setup Available Users RecyclerView
+        availableUsersAdapter = UserAdapter { user ->
+            // When an available user is selected
+            selectedUsers.add(user.userId)
+            updateUserLists()
+            updateCreateButtonState()
         }
 
-        binding.usersRecyclerView.apply {
+        // Setup Selected Users RecyclerView
+        selectedUsersAdapter = UserAdapter { user ->
+            // When a selected user is unselected
+            selectedUsers.remove(user.userId)
+            updateUserLists()
+            updateCreateButtonState()
+        }
+
+        binding.availableUsersRecyclerView.apply {
             layoutManager = LinearLayoutManager(this@CreateGroupActivity)
-            adapter = userAdapter
+            adapter = availableUsersAdapter
+        }
+
+        binding.selectedUsersRecyclerView.apply {
+            layoutManager = LinearLayoutManager(this@CreateGroupActivity)
+            adapter = selectedUsersAdapter
         }
 
         loadAllUsers()
     }
 
-    private fun updateSelectedUsersCount() {
-        val selectedCount = userAdapter.getSelectedUsers().size
-        binding.selectedUsersCount.text = "Selected users: $selectedCount"
-        binding.selectedUsersCount.visibility = if (selectedCount > 0) View.VISIBLE else View.GONE
+    private fun updateUserLists() {
+        // Update Selected Users List
+        val selectedUsersList = allUsers.filter { user ->
+            selectedUsers.contains(user.userId)
+        }
+        selectedUsersAdapter.submitList(selectedUsersList)
+
+        // Update UI visibility for selected users
+        binding.selectedUsersRecyclerView.visibility =
+            if (selectedUsersList.isEmpty()) View.GONE else View.VISIBLE
+        binding.noSelectedUsersText.visibility =
+            if (selectedUsersList.isEmpty()) View.VISIBLE else View.GONE
+
+        // Update Available Users List (considering search query)
+        val searchQuery = binding.searchUserInput.text.toString().trim().lowercase()
+        filterUsers(searchQuery)
     }
 
-    private fun setupUserSearch() {
-        binding.searchUserInput.addTextChangedListener(object : TextWatcher {
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                val searchText = s?.toString()?.trim()?.lowercase() ?: ""
-                filterUsers(searchText)
-            }
+    private fun filterUsers(query: String) {
+        val searchQuery = query.trim().lowercase()
 
-            override fun afterTextChanged(s: Editable?) {}
-        })
+        val filteredUsers = if (searchQuery.isEmpty()) {
+            allUsers
+        } else {
+            allUsers.filter { user ->
+                // Check if all characters in the search query appear in sequence
+                // in either the email or display name
+                searchQuery.toCharArray().joinToString(".*", "(.*)", ".*").toRegex()
+                    .let { regex ->
+                        user.email.lowercase().matches(regex) ||
+                                user.displayName.lowercase().matches(regex)
+                    }
+            }
+        }.filter { user -> !selectedUsers.contains(user.userId) }
+
+        // Update Available Users
+        availableUsersAdapter.submitList(filteredUsers)
+
+        // Update UI visibility
+        binding.availableUsersRecyclerView.visibility =
+            if (filteredUsers.isEmpty()) View.GONE else View.VISIBLE
+        binding.noAvailableUsersText.visibility =
+            if (filteredUsers.isEmpty()) View.VISIBLE else View.GONE
+    }
+
+    private fun updateCreateButtonState() {
+        binding.createButton.isEnabled = selectedUsers.isNotEmpty()
+        updateSelectedUsersCount()
+    }
+
+
+
+    private fun updateSelectedUsersCount() {
+        val count = selectedUsers.size
+        binding.selectedUsersCount.apply {
+            text = "Selected users: $count"
+            visibility = if (count > 0) View.VISIBLE else View.GONE
+        }
     }
 
     private fun loadAllUsers() {
@@ -85,32 +141,49 @@ class CreateGroupActivity : AppCompatActivity() {
                     doc.toObject(User::class.java)
                 }.filter { it.userId != currentUserId }.toMutableList()
 
-                updateUsersList(allUsers)
+                updateUserLists()
                 binding.loadingIndicator.visibility = View.GONE
             }
             .addOnFailureListener {
-                Toast.makeText(this, "Failed to load users: ${it.message}", Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    this,
+                    "Failed to load users: ${it.message}",
+                    Toast.LENGTH_SHORT
+                ).show()
                 binding.loadingIndicator.visibility = View.GONE
             }
     }
 
-    private fun filterUsers(query: String) {
-        if (query.isEmpty()) {
-            updateUsersList(allUsers)
-            return
-        }
-
-        val filteredUsers = allUsers.filter { user ->
-            user.email.lowercase().contains(query) || user.displayName.lowercase().contains(query)
-        }
-        updateUsersList(filteredUsers)
+    private fun setupToolbar() {
+        binding.toolbar.setNavigationOnClickListener { finish() }
     }
 
-    private fun updateUsersList(users: List<User>) {
-        userAdapter.submitList(users)
-        binding.usersRecyclerView.visibility = if (users.isEmpty()) View.GONE else View.VISIBLE
-        binding.noUsersText.visibility = if (users.isEmpty()) View.VISIBLE else View.GONE
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putStringArrayList("selectedUsers", ArrayList(selectedUsers))
     }
+
+    override fun onRestoreInstanceState(savedInstanceState: Bundle) {
+        super.onRestoreInstanceState(savedInstanceState)
+        selectedUsers = savedInstanceState.getStringArrayList("selectedUsers")
+            ?.toMutableSet() ?: mutableSetOf()
+        updateUserLists()
+        updateCreateButtonState()
+    }
+
+
+    private fun setupUserSearch() {
+        binding.searchUserInput.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                val searchText = s?.toString() ?: ""
+                filterUsers(searchText)
+            }
+            override fun afterTextChanged(s: Editable?) {}
+        })
+    }
+
 
     private fun setupCreateButton() {
         binding.createButton.isEnabled = false
@@ -155,7 +228,8 @@ class CreateGroupActivity : AppCompatActivity() {
             }
         }
 
-        if (userAdapter.getSelectedUsers().isEmpty()) {
+        // Changed from userAdapter.getSelectedUsers() to selectedUsers
+        if (selectedUsers.isEmpty()) {
             Toast.makeText(this, "Please select at least one member", Toast.LENGTH_SHORT).show()
             isValid = false
         }
@@ -172,7 +246,8 @@ class CreateGroupActivity : AppCompatActivity() {
         binding.loadingIndicator.visibility = View.VISIBLE
         binding.createButton.isEnabled = false
 
-        val selectedUsers = userAdapter.getSelectedUsers().toSet()
+        // Changed from userAdapter.getSelectedUsers() to selectedUsers
+        val selectedUsersList = selectedUsers.toSet()
 
         val group = Group(
             groupId = db.collection("groups").document().id,
@@ -188,7 +263,7 @@ class CreateGroupActivity : AppCompatActivity() {
             .document(group.groupId)
             .set(group)
             .addOnSuccessListener {
-                createInvitations(group.groupId, selectedUsers)
+                createInvitations(group.groupId, selectedUsersList)
             }
             .addOnFailureListener { e ->
                 Toast.makeText(this, "Failed to create group: ${e.message}", Toast.LENGTH_SHORT).show()

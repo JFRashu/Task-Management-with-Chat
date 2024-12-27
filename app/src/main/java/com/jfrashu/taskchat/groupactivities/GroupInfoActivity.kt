@@ -17,11 +17,13 @@ import com.jfrashu.taskchat.dataclasses.User
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.appbar.MaterialToolbar
 import android.widget.TextView
+import androidx.core.view.isVisible
 import java.text.SimpleDateFormat
 import java.util.*
 
 class GroupInfoActivity : AppCompatActivity() {
     private lateinit var db: FirebaseFirestore
+    private lateinit var auth: FirebaseAuth
     private lateinit var groupNameInput: TextInputEditText
     private lateinit var groupDescriptionInput: TextInputEditText
     private lateinit var membersRecyclerView: RecyclerView
@@ -33,7 +35,7 @@ class GroupInfoActivity : AppCompatActivity() {
     private lateinit var membersAdapter: GroupMembersAdapter
 
     private var groupId: String? = null
-    private var isAdmin: Boolean = false
+    private var currentUserId: String = ""
     private var currentGroup: Group? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -42,10 +44,11 @@ class GroupInfoActivity : AppCompatActivity() {
 
         // Initialize Firebase
         db = FirebaseFirestore.getInstance()
+        auth = FirebaseAuth.getInstance()
+        currentUserId = auth.currentUser?.uid ?: ""
 
         // Get group ID from intent
         groupId = intent.getStringExtra("groupId")
-        isAdmin = intent.getBooleanExtra("isAdmin", false)
 
         if (groupId == null) {
             Toast.makeText(this, "Invalid group information", Toast.LENGTH_SHORT).show()
@@ -54,13 +57,11 @@ class GroupInfoActivity : AppCompatActivity() {
         }
 
         initializeViews()
-        setupToolbar()
-        setupMembersRecyclerView()
         fetchGroupInformation()
-        setupButtonListeners()
     }
 
     private fun initializeViews() {
+        // Initialize views
         groupNameInput = findViewById(R.id.groupNameInput)
         groupDescriptionInput = findViewById(R.id.groupDescriptionInput)
         membersRecyclerView = findViewById(R.id.membersRecyclerView)
@@ -70,34 +71,24 @@ class GroupInfoActivity : AppCompatActivity() {
         lastActivityText = findViewById(R.id.lastActivityText)
         toolbar = findViewById(R.id.toolbar)
 
-        // Set input fields enabled/disabled based on admin status
-        groupNameInput.isEnabled = isAdmin
-        groupDescriptionInput.isEnabled = isAdmin
-        addMemberButton.isEnabled = isAdmin
-        saveGroupFab.isEnabled = isAdmin
-
-        if (!isAdmin) {
-            saveGroupFab.hide()
-        }
-    }
-
-    private fun setupToolbar() {
+        // Setup toolbar
         toolbar.setNavigationOnClickListener {
             onBackPressed()
         }
-    }
 
-    private fun setupMembersRecyclerView() {
-        membersAdapter = GroupMembersAdapter(emptyList(), isAdmin) { userId ->
-            // Handle member click - maybe show profile or remove member
-            if (isAdmin) {
-                // Implement remove member functionality
-                removeMember(userId)
-            }
+        // Initially disable all admin controls until we verify admin status
+        groupNameInput.isEnabled = false
+        groupDescriptionInput.isEnabled = false
+        addMemberButton.isEnabled = false
+        saveGroupFab.isVisible = false
+
+        // Setup button listeners
+        addMemberButton.setOnClickListener {
+            startAddMemberActivity()
         }
-        membersRecyclerView.apply {
-            layoutManager = LinearLayoutManager(this@GroupInfoActivity)
-            adapter = membersAdapter
+
+        saveGroupFab.setOnClickListener {
+            saveGroupChanges()
         }
     }
 
@@ -109,7 +100,12 @@ class GroupInfoActivity : AppCompatActivity() {
                     document.toObject(Group::class.java)?.let { group ->
                         currentGroup = group
                         updateUI(group)
+                        setupMembersRecyclerView(group)
                         fetchMembers(group.members)
+
+                        // Update UI based on admin status
+                        val isAdmin = group.adminId == currentUserId
+                        updateAdminControls(isAdmin)
                     }
                 }
                 .addOnFailureListener { e ->
@@ -136,41 +132,59 @@ class GroupInfoActivity : AppCompatActivity() {
         lastActivityText.text = "Last activity: $relativeTime"
     }
 
-    private fun fetchMembers(memberIds: List<String>) {
-        val membersList = mutableListOf<User>()
-        var completedQueries = 0
+    private fun setupMembersRecyclerView(group: Group) {
+        val isAdmin = group.adminId == currentUserId
 
-        memberIds.forEach { userId ->
-            db.collection("users").document(userId)
-                .get()
-                .addOnSuccessListener { document ->
-                    document.toObject(User::class.java)?.let { user ->
-                        membersList.add(user)
-                    }
-                    completedQueries++
+        membersAdapter = GroupMembersAdapter(
+            members = emptyList(),
+            currentUserIsAdmin = isAdmin,
+            groupAdminId = group.adminId
+        ) { userId ->
+            if (isAdmin) {
+                removeMember(userId)
+            }
+        }
 
-                    if (completedQueries == memberIds.size) {
-                        membersAdapter.updateMembers(membersList)
-                    }
-                }
-                .addOnFailureListener { e ->
-                    completedQueries++
-                    Toast.makeText(this, "Error fetching member: ${e.message}",
-                        Toast.LENGTH_SHORT).show()
-                }
+        membersRecyclerView.apply {
+            layoutManager = LinearLayoutManager(this@GroupInfoActivity)
+            adapter = membersAdapter
         }
     }
 
-    private fun setupButtonListeners() {
-//        addMemberButton.setOnClickListener {
-//            val intent = Intent(this, AddMemberActivity::class.java).apply {
-//                putExtra("groupId", groupId)
-//            }
-//            startActivity(intent)
-//        }
+    private fun updateAdminControls(isAdmin: Boolean) {
+        groupNameInput.isEnabled = isAdmin
+        groupDescriptionInput.isEnabled = isAdmin
+        addMemberButton.isEnabled = isAdmin
+        saveGroupFab.isVisible = isAdmin
+    }
 
-        saveGroupFab.setOnClickListener {
-            saveGroupChanges()
+    private fun fetchMembers(memberIds: List<String>) {
+        if (memberIds.isEmpty()) {
+            membersAdapter.updateMembers(emptyList())
+            return
+        }
+
+        db.collection("users")
+            .whereIn("userId", memberIds)
+            .get()
+            .addOnSuccessListener { documents ->
+                val members = documents.mapNotNull { doc ->
+                    doc.toObject(User::class.java)
+                }
+                membersAdapter.updateMembers(members)
+            }
+            .addOnFailureListener { e ->
+                Toast.makeText(this, "Error fetching members: ${e.message}",
+                    Toast.LENGTH_SHORT).show()
+            }
+    }
+
+    private fun startAddMemberActivity() {
+        groupId?.let { gId ->
+            val intent = Intent(this, AddMemberActivity::class.java).apply {
+                putExtra("groupId", gId)
+            }
+            startActivity(intent)
         }
     }
 
@@ -178,6 +192,7 @@ class GroupInfoActivity : AppCompatActivity() {
         val newName = groupNameInput.text.toString().trim()
         val newDescription = groupDescriptionInput.text.toString().trim()
 
+        // Validate inputs
         if (newName.length < 3) {
             groupNameInput.error = "Group name must be at least 3 characters"
             return
@@ -189,6 +204,13 @@ class GroupInfoActivity : AppCompatActivity() {
         }
 
         currentGroup?.let { group ->
+            // Only allow admin to make changes
+            if (group.adminId != currentUserId) {
+                Toast.makeText(this, "Only admin can modify group details",
+                    Toast.LENGTH_SHORT).show()
+                return
+            }
+
             val updatedGroup = group.copy(
                 name = newName,
                 description = newDescription,
@@ -212,6 +234,13 @@ class GroupInfoActivity : AppCompatActivity() {
 
     private fun removeMember(userId: String) {
         currentGroup?.let { group ->
+            // Validate removal
+            if (group.adminId != currentUserId) {
+                Toast.makeText(this, "Only admin can remove members",
+                    Toast.LENGTH_SHORT).show()
+                return
+            }
+
             if (group.members.size <= 1) {
                 Toast.makeText(this, "Cannot remove the last member",
                     Toast.LENGTH_SHORT).show()
@@ -228,7 +257,12 @@ class GroupInfoActivity : AppCompatActivity() {
 
             groupId?.let { gId ->
                 db.collection("groups").document(gId)
-                    .update("members", updatedMembers)
+                    .update(
+                        mapOf(
+                            "members" to updatedMembers,
+                            "lastActivity" to System.currentTimeMillis()
+                        )
+                    )
                     .addOnSuccessListener {
                         Toast.makeText(this, "Member removed successfully",
                             Toast.LENGTH_SHORT).show()
@@ -240,5 +274,11 @@ class GroupInfoActivity : AppCompatActivity() {
                     }
             }
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // Refresh group information when returning to the activity
+        fetchGroupInformation()
     }
 }

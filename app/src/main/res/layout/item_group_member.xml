@@ -14,7 +14,6 @@
         android:layout_height="wrap_content"
         android:padding="16dp">
 
-        <!-- Avatar/Icon -->
         <com.google.android.material.imageview.ShapeableImageView
             android:id="@+id/memberAvatar"
             android:layout_width="40dp"
@@ -27,7 +26,6 @@
             android:src="@drawable/baseline_person_24"
             app:tint="?attr/colorOnSecondaryContainer" />
 
-        <!-- Member Name -->
         <TextView
             android:id="@+id/memberNameText"
             android:layout_width="0dp"
@@ -40,7 +38,6 @@
             app:layout_constraintTop_toTopOf="@+id/memberAvatar"
             tools:text="John Doe" />
 
-        <!-- Member Email -->
         <TextView
             android:id="@+id/memberEmailText"
             android:layout_width="0dp"
@@ -54,7 +51,6 @@
             app:layout_constraintTop_toBottomOf="@+id/memberNameText"
             tools:text="john.doe@example.com" />
 
-        <!-- Remove Member Button -->
         <ImageButton
             android:id="@+id/removeMemberButton"
             android:layout_width="48dp"
@@ -66,17 +62,18 @@
             app:layout_constraintTop_toTopOf="parent"
             app:tint="?attr/colorError" />
 
-        <!-- Online Status Indicator (Optional) -->
-        <TextView
+        <com.google.android.material.chip.Chip
             android:id="@+id/statusText"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
+            app:chipBackgroundColor="@android:color/transparent"
+            app:chipStrokeWidth="1dp"
+            app:chipStrokeColor="?attr/colorPrimary"
             android:textAppearance="?attr/textAppearanceBodySmall"
-            android:textColor="?attr/colorOnSurfaceVariant"
             app:layout_constraintStart_toStartOf="@+id/memberEmailText"
             app:layout_constraintTop_toBottomOf="@+id/memberEmailText"
-            tools:text="Last active: 2 hours ago" />
+            tools:text="Group Admin" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
