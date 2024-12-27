@@ -15,6 +15,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.jfrashu.taskchat.R
 import com.jfrashu.taskchat.databinding.ActivityAddMemberBinding
 import com.jfrashu.taskchat.dataclasses.Group
+import com.jfrashu.taskchat.dataclasses.GroupInvitation
 import com.jfrashu.taskchat.dataclasses.User
 import com.jfrashu.taskchat.users.UserAdapter
 
@@ -24,7 +25,6 @@ class AddMemberActivity : AppCompatActivity() {
     private lateinit var auth: FirebaseAuth
     private lateinit var availableUsersAdapter: UserAdapter
     private var selectedUsers = mutableSetOf<String>()
-    private var currentGroupMembers = mutableSetOf<String>()
     private var groupId: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -75,7 +75,7 @@ class AddMemberActivity : AppCompatActivity() {
 
             // Setup add button
             addMembersButton.setOnClickListener {
-                addSelectedMembers()
+                sendInvitations()
             }
         }
     }
@@ -114,7 +114,6 @@ class AddMemberActivity : AppCompatActivity() {
                 .get()
                 .addOnSuccessListener { document ->
                     document.toObject(Group::class.java)?.let { group ->
-                        currentGroupMembers.addAll(group.members)
                         loadAvailableUsers()
                     }
                 }
@@ -131,7 +130,6 @@ class AddMemberActivity : AppCompatActivity() {
             .addOnSuccessListener { documents ->
                 val availableUsers = documents
                     .mapNotNull { it.toObject(User::class.java) }
-                    .filter { !currentGroupMembers.contains(it.userId) }
                 availableUsersAdapter.submitList(availableUsers)
                 binding.loadingIndicator.isVisible = false
                 updateUIVisibility(availableUsers.isEmpty())
@@ -142,9 +140,9 @@ class AddMemberActivity : AppCompatActivity() {
             }
     }
 
-    private fun addSelectedMembers() {
+    private fun sendInvitations() {
         if (selectedUsers.isEmpty()) {
-            Toast.makeText(this, "Please select users to add", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Please select users to invite", Toast.LENGTH_SHORT).show()
             return
         }
 
@@ -152,29 +150,33 @@ class AddMemberActivity : AppCompatActivity() {
         binding.addMembersButton.isEnabled = false
 
         groupId?.let { gId ->
-            val groupRef = db.collection("groups").document(gId)
+            val currentUserUid = auth.currentUser?.uid ?: return
 
-            db.runTransaction { transaction ->
-                val snapshot = transaction.get(groupRef)
-                val currentGroup = snapshot.toObject(Group::class.java)
-
-                currentGroup?.let { group ->
-                    val updatedMembers = (group.members + selectedUsers).distinct()
-                    transaction.update(groupRef,
-                        mapOf(
-                            "members" to updatedMembers,
-                            "lastActivity" to System.currentTimeMillis()
-                        )
-                    )
-                }
-            }.addOnSuccessListener {
-                Toast.makeText(this, "Members added successfully", Toast.LENGTH_SHORT).show()
-                finish()
-            }.addOnFailureListener { e ->
-                Toast.makeText(this, "Failed to add members: ${e.message}", Toast.LENGTH_SHORT).show()
-                binding.loadingIndicator.isVisible = false
-                binding.addMembersButton.isEnabled = true
+            // Create and send invitations
+            val batch = db.batch()
+            selectedUsers.forEach { userId ->
+                val invitationRef = db.collection("groupInvitations").document()
+                val invitation = GroupInvitation(
+                    invitationId = invitationRef.id,
+                    groupId = gId,
+                    invitedBy = currentUserUid,
+                    invitedUser = userId,
+                    status = "pending",
+                    timestamp = System.currentTimeMillis()
+                )
+                batch.set(invitationRef, invitation)
             }
+
+            batch.commit()
+                .addOnSuccessListener {
+                    Toast.makeText(this, "Invitations sent successfully", Toast.LENGTH_SHORT).show()
+                    finish()
+                }
+                .addOnFailureListener { e ->
+                    Toast.makeText(this, "Failed to send invitations: ${e.message}", Toast.LENGTH_SHORT).show()
+                    binding.loadingIndicator.isVisible = false
+                    binding.addMembersButton.isEnabled = true
+                }
         }
     }
 
