@@ -116,7 +116,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        app:layout_constraintGuide_percent=".85" />
+        app:layout_constraintGuide_percent=".83" />
     <androidx.constraintlayout.widget.Guideline
         android:id="@+id/h_guideline14"
         android:layout_width="wrap_content"
@@ -263,12 +263,12 @@
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:enabled="false"
-        android:text="Next"
+        android:text="Register"
         android:textSize="18sp"
-        app:layout_constraintBottom_toTopOf="@id/h_guideline16"
+        app:layout_constraintBottom_toTopOf="@id/h_guideline13"
         app:layout_constraintEnd_toStartOf="@id/v_guideline2"
-        app:layout_constraintStart_toEndOf="@id/v_guideline3"
-        app:layout_constraintTop_toBottomOf="@id/h_guideline15" />
+        app:layout_constraintStart_toEndOf="@id/v_guideline1"
+        app:layout_constraintTop_toBottomOf="@id/h_guideline12" />
 
     <!-- Register TextView -->
     <TextView
@@ -280,8 +280,8 @@
         android:textAlignment="textStart"
         android:textColor="@color/md_theme_onPrimaryFixedVariant"
         android:textSize="15sp"
-        app:layout_constraintBottom_toTopOf="@id/h_guideline13"
+        app:layout_constraintBottom_toTopOf="@id/h_guideline16"
         app:layout_constraintEnd_toStartOf="@id/v_guideline2"
         app:layout_constraintStart_toEndOf="@id/v_guideline1"
-        app:layout_constraintTop_toBottomOf="@id/h_guideline12" />
+        app:layout_constraintTop_toBottomOf="@id/h_guideline15" />
 </androidx.constraintlayout.widget.ConstraintLayout>
