@@ -95,6 +95,12 @@ class GroupActivity : AppCompatActivity() {
             adapter = groupAdapter
         }
     }
+    @Override
+    override fun onResume() {
+        super.onResume()
+        setupRecyclerView()
+        fetchUserGroups()
+    }
 
     private fun fetchUserGroups() {
         val currentUser = FirebaseAuth.getInstance().currentUser

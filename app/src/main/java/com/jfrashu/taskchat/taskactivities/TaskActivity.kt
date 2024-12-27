@@ -88,6 +88,13 @@ class TaskActivity : AppCompatActivity() {
             adapter = taskAdapter
         }
     }
+    @Override
+    override fun onRestart() {
+        super.onRestart()
+        setupUI()
+        setupRecyclerView()
+        fetchTasks()
+    }
 
     private fun navigateToSpecificTask(taskId: String) {
         groupId?.let { gId ->
