@@ -1,6 +1,7 @@
 package com.jfrashu.taskchat.groupactivities
 
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -12,6 +13,8 @@ import com.jfrashu.taskchat.dataclasses.Group
 import com.jfrashu.taskchat.dataclasses.GroupInvitation
 import com.jfrashu.taskchat.dataclasses.GroupInvitationWithDetails
 import com.jfrashu.taskchat.dataclasses.User
+
+private const val TAG = "GroupInvitationActivity"
 
 class GroupInvitationActivity : AppCompatActivity() {
     private lateinit var binding: ActivityGroupInvitationBinding
@@ -43,6 +46,7 @@ class GroupInvitationActivity : AppCompatActivity() {
         binding.invitationsRecyclerView.apply {
             layoutManager = LinearLayoutManager(this@GroupInvitationActivity)
             adapter = this@GroupInvitationActivity.adapter
+            visibility = View.VISIBLE // Ensure RecyclerView is visible initially
         }
     }
 
@@ -53,23 +57,44 @@ class GroupInvitationActivity : AppCompatActivity() {
     }
 
     private fun loadInvitations() {
-        val currentUser = auth.currentUser ?: return
+        val currentUser = auth.currentUser ?: run {
+            Log.e(TAG, "No authenticated user found")
+            showError("Please sign in to view invitations")
+            return
+        }
+
         showLoading(true)
+        Log.d(TAG, "Loading invitations for user: ${currentUser.uid}")
 
         db.collection("groupInvitations")
             .whereEqualTo("invitedUser", currentUser.uid)
             .whereEqualTo("status", "pending")
             .get()
             .addOnSuccessListener { documents ->
-                val invitations = documents.mapNotNull { it.toObject(GroupInvitation::class.java) }
+                Log.d(TAG, "Found ${documents.size()} invitation documents")
+                val invitations = documents.mapNotNull { doc ->
+                    try {
+                        doc.toObject(GroupInvitation::class.java).also { invitation ->
+                            Log.d(TAG, "Mapped invitation: ${invitation.invitationId}")
+                        }
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Error mapping invitation document: ${doc.id}", e)
+                        null
+                    }
+                }
+
                 if (invitations.isEmpty()) {
+                    Log.d(TAG, "No pending invitations found")
                     showEmptyView(true)
+                    showLoading(false)
                 } else {
+                    Log.d(TAG, "Found ${invitations.size} invitations, fetching details")
                     fetchInvitationDetails(invitations)
                 }
             }
-            .addOnFailureListener {
-                showError("Failed to load invitations")
+            .addOnFailureListener { e ->
+                Log.e(TAG, "Error loading invitations", e)
+                showError("Failed to load invitations: ${e.localizedMessage}")
                 showLoading(false)
             }
     }
@@ -77,81 +102,142 @@ class GroupInvitationActivity : AppCompatActivity() {
     private fun fetchInvitationDetails(invitations: List<GroupInvitation>) {
         val invitationDetails = mutableListOf<GroupInvitationWithDetails>()
         var completedRequests = 0
+        var hasError = false
 
         invitations.forEach { invitation ->
+            Log.d(TAG, "Fetching details for invitation: ${invitation.invitationId}")
+
             // Fetch group details
-            db.collection("groups").document(invitation.groupId).get()
+            db.collection("groups")
+                .document(invitation.groupId)
+                .get()
                 .addOnSuccessListener { groupDoc ->
                     val group = groupDoc.toObject(Group::class.java)
+                    if (group == null) {
+                        Log.e(TAG, "Group not found for invitation: ${invitation.invitationId}")
+                        hasError = true
+                        handleCompletedRequest(invitations.size, ++completedRequests, hasError, invitationDetails)
+                        return@addOnSuccessListener
+                    }
 
                     // Fetch inviter details
-                    db.collection("users").document(invitation.invitedBy).get()
+                    db.collection("users")
+                        .document(invitation.invitedBy)
+                        .get()
                         .addOnSuccessListener { userDoc ->
                             val inviter = userDoc.toObject(User::class.java)
-
-                            if (group != null && inviter != null) {
-                                invitationDetails.add(
-                                    GroupInvitationWithDetails(
-                                        invitation = invitation,
-                                        groupName = group.name,
-                                        inviterName = inviter.displayName
-                                    )
-                                )
+                            if (inviter == null) {
+                                Log.e(TAG, "Inviter not found for invitation: ${invitation.invitationId}")
+                                hasError = true
+                                handleCompletedRequest(invitations.size, ++completedRequests, hasError, invitationDetails)
+                                return@addOnSuccessListener
                             }
 
-                            completedRequests++
-                            if (completedRequests == invitations.size) {
-                                adapter.submitList(invitationDetails)
-                                showLoading(false)
-                                showEmptyView(invitationDetails.isEmpty())
-                            }
+                            val invitationWithDetails = GroupInvitationWithDetails(
+                                invitation = invitation,
+                                groupName = group.name,
+                                inviterName = inviter.displayName
+                            )
+                            Log.d(TAG, "Created invitation details: ${invitationWithDetails.groupName}")
+                            invitationDetails.add(invitationWithDetails)
+                            handleCompletedRequest(invitations.size, ++completedRequests, hasError, invitationDetails)
                         }
+                        .addOnFailureListener { e ->
+                            Log.e(TAG, "Error fetching inviter details", e)
+                            hasError = true
+                            handleCompletedRequest(invitations.size, ++completedRequests, hasError, invitationDetails)
+                        }
+                }
+                .addOnFailureListener { e ->
+                    Log.e(TAG, "Error fetching group details", e)
+                    hasError = true
+                    handleCompletedRequest(invitations.size, ++completedRequests, hasError, invitationDetails)
                 }
         }
     }
 
-    private fun handleInvitationResponse(invitation: GroupInvitation, status: String) {
-        val currentUser = auth.currentUser ?: return
-        showLoading(true)
+    private fun handleCompletedRequest(
+        totalRequests: Int,
+        completedRequests: Int,
+        hasError: Boolean,
+        invitationDetails: List<GroupInvitationWithDetails>
+    ) {
+        if (completedRequests == totalRequests) {
+            Log.d(TAG, "All requests completed. HasError: $hasError, Details size: ${invitationDetails.size}")
+            runOnUiThread {
+                if (!hasError) {
+                    adapter.submitList(invitationDetails)
+                    showEmptyView(invitationDetails.isEmpty())
+                } else {
+                    showError("Some invitation details could not be loaded")
+                    showEmptyView(invitationDetails.isEmpty())
+                }
+                showLoading(false)
+            }
+        }
+    }
 
-        // Update invitation status
+    private fun handleInvitationResponse(invitation: GroupInvitation, status: String) {
+        val currentUser = auth.currentUser ?: run {
+            Log.e(TAG, "No authenticated user found while handling invitation response")
+            showError("Please sign in to respond to invitations")
+            return
+        }
+
+        showLoading(true)
+        Log.d(TAG, "Handling invitation response: $status for ${invitation.invitationId}")
+
         db.collection("groupInvitations")
             .document(invitation.invitationId)
             .update("status", status)
             .addOnSuccessListener {
+                Log.d(TAG, "Successfully updated invitation status to: $status")
                 if (status == "accepted") {
-                    // Add user to group members
                     addUserToGroup(invitation.groupId, currentUser.uid)
                 } else {
-                    // Reload invitations if rejected
                     loadInvitations()
                 }
             }
-            .addOnFailureListener {
-                showError("Failed to ${status} invitation")
+            .addOnFailureListener { e ->
+                Log.e(TAG, "Error updating invitation status", e)
+                showError("Failed to $status invitation: ${e.localizedMessage}")
                 showLoading(false)
             }
     }
 
     private fun addUserToGroup(groupId: String, userId: String) {
-        db.collection("groups").document(groupId)
-            .get()
-            .addOnSuccessListener { document ->
-                val group = document.toObject(Group::class.java)
-                if (group != null) {
-                    val updatedMembers = group.members + userId
-                    db.collection("groups").document(groupId)
-                        .update("members", updatedMembers)
-                        .addOnSuccessListener {
-                            showSuccess("Successfully joined the group")
-                            loadInvitations()
-                        }
-                        .addOnFailureListener {
-                            showError("Failed to join group")
-                            showLoading(false)
-                        }
+        Log.d(TAG, "Adding user $userId to group $groupId")
+
+        val groupRef = db.collection("groups").document(groupId)
+
+        // Use a transaction to safely update the members array
+        db.runTransaction { transaction ->
+            val snapshot = transaction.get(groupRef)
+            val group = snapshot.toObject(Group::class.java)
+
+            if (group != null) {
+                // Create a new members list with the user added
+                val updatedMembers = if (group.members.contains(userId)) {
+                    group.members // User already in group
+                } else {
+                    group.members + userId // Add user to group
                 }
+
+                // Update the document
+                transaction.update(groupRef, "members", updatedMembers)
+            } else {
+                throw Exception("Group not found")
             }
+        }.addOnSuccessListener {
+            Log.d(TAG, "Successfully added user to group")
+            showSuccess("Successfully joined the group")
+            loadInvitations()
+            showLoading(false)
+        }.addOnFailureListener { e ->
+            Log.e(TAG, "Error updating group members", e)
+            showError("Failed to join group: ${e.localizedMessage}")
+            showLoading(false)
+        }
     }
 
     private fun showLoading(show: Boolean) {

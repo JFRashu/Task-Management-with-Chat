@@ -1,5 +1,5 @@
 <!-- sender_message_background.xml -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android">
-    <solid android:color="@color/md_theme_tertiaryFixedDim" />
+    <solid android:color="#D1A2D9" />
     <corners android:radius="16dp" />
 </shape>

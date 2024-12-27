@@ -22,7 +22,7 @@
             android:src="@drawable/baseline_task_24"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            app:tint="@color/material_dynamic_primary40"/>
+            app:tint="@color/md_theme_onPrimaryFixedVariant"/>
 
         <TextView
             android:id="@+id/taskTitle"

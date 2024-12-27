@@ -3,6 +3,7 @@ package com.jfrashu.taskchat.groupactivities
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
+import android.util.Log
 import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -17,6 +18,8 @@ import com.jfrashu.taskchat.dataclasses.Group
 import com.jfrashu.taskchat.dataclasses.GroupInvitation
 import com.jfrashu.taskchat.dataclasses.User
 import com.jfrashu.taskchat.users.UserAdapter
+
+private const val TAG = "CreateGroupActivity"
 
 class CreateGroupActivity : AppCompatActivity() {
 
@@ -41,17 +44,15 @@ class CreateGroupActivity : AppCompatActivity() {
     }
 
     private fun setupRecyclerViews() {
-        // Setup Available Users RecyclerView
         availableUsersAdapter = UserAdapter { user ->
-            // When an available user is selected
+            Log.d(TAG, "User selected: ${user.displayName}")
             selectedUsers.add(user.userId)
             updateUserLists()
             updateCreateButtonState()
         }
 
-        // Setup Selected Users RecyclerView
         selectedUsersAdapter = UserAdapter { user ->
-            // When a selected user is unselected
+            Log.d(TAG, "User unselected: ${user.displayName}")
             selectedUsers.remove(user.userId)
             updateUserLists()
             updateCreateButtonState()
@@ -71,32 +72,28 @@ class CreateGroupActivity : AppCompatActivity() {
     }
 
     private fun updateUserLists() {
-        // Update Selected Users List
         val selectedUsersList = allUsers.filter { user ->
             selectedUsers.contains(user.userId)
         }
         selectedUsersAdapter.submitList(selectedUsersList)
 
-        // Update UI visibility for selected users
         binding.selectedUsersRecyclerView.visibility =
             if (selectedUsersList.isEmpty()) View.GONE else View.VISIBLE
         binding.noSelectedUsersText.visibility =
             if (selectedUsersList.isEmpty()) View.VISIBLE else View.GONE
 
-        // Update Available Users List (considering search query)
         val searchQuery = binding.searchUserInput.text.toString().trim().lowercase()
         filterUsers(searchQuery)
     }
 
     private fun filterUsers(query: String) {
         val searchQuery = query.trim().lowercase()
+        Log.d(TAG, "Filtering users with query: $searchQuery")
 
         val filteredUsers = if (searchQuery.isEmpty()) {
             allUsers
         } else {
             allUsers.filter { user ->
-                // Check if all characters in the search query appear in sequence
-                // in either the email or display name
                 searchQuery.toCharArray().joinToString(".*", "(.*)", ".*").toRegex()
                     .let { regex ->
                         user.email.lowercase().matches(regex) ||
@@ -105,38 +102,29 @@ class CreateGroupActivity : AppCompatActivity() {
             }
         }.filter { user -> !selectedUsers.contains(user.userId) }
 
-        // Update Available Users
         availableUsersAdapter.submitList(filteredUsers)
 
-        // Update UI visibility
         binding.availableUsersRecyclerView.visibility =
             if (filteredUsers.isEmpty()) View.GONE else View.VISIBLE
         binding.noAvailableUsersText.visibility =
             if (filteredUsers.isEmpty()) View.VISIBLE else View.GONE
     }
 
-    private fun updateCreateButtonState() {
-        binding.createButton.isEnabled = selectedUsers.isNotEmpty()
-        updateSelectedUsersCount()
-    }
-
-
-
-    private fun updateSelectedUsersCount() {
-        val count = selectedUsers.size
-        binding.selectedUsersCount.apply {
-            text = "Selected users: $count"
-            visibility = if (count > 0) View.VISIBLE else View.GONE
-        }
-    }
-
     private fun loadAllUsers() {
-        val currentUserId = auth.currentUser?.uid ?: return
+        val currentUserId = auth.currentUser?.uid ?: run {
+            Log.e(TAG, "No current user found")
+            Toast.makeText(this, "Authentication error", Toast.LENGTH_SHORT).show()
+            finish()
+            return
+        }
+
         binding.loadingIndicator.visibility = View.VISIBLE
+        Log.d(TAG, "Loading users from Firestore")
 
         db.collection("users")
             .get()
             .addOnSuccessListener { documents ->
+                Log.d(TAG, "Successfully loaded ${documents.size()} users")
                 allUsers = documents.mapNotNull { doc ->
                     doc.toObject(User::class.java)
                 }.filter { it.userId != currentUserId }.toMutableList()
@@ -144,10 +132,11 @@ class CreateGroupActivity : AppCompatActivity() {
                 updateUserLists()
                 binding.loadingIndicator.visibility = View.GONE
             }
-            .addOnFailureListener {
+            .addOnFailureListener { exception ->
+                Log.e(TAG, "Error loading users", exception)
                 Toast.makeText(
                     this,
-                    "Failed to load users: ${it.message}",
+                    "Failed to load users: ${exception.message}",
                     Toast.LENGTH_SHORT
                 ).show()
                 binding.loadingIndicator.visibility = View.GONE
@@ -157,21 +146,6 @@ class CreateGroupActivity : AppCompatActivity() {
     private fun setupToolbar() {
         binding.toolbar.setNavigationOnClickListener { finish() }
     }
-
-
-    override fun onSaveInstanceState(outState: Bundle) {
-        super.onSaveInstanceState(outState)
-        outState.putStringArrayList("selectedUsers", ArrayList(selectedUsers))
-    }
-
-    override fun onRestoreInstanceState(savedInstanceState: Bundle) {
-        super.onRestoreInstanceState(savedInstanceState)
-        selectedUsers = savedInstanceState.getStringArrayList("selectedUsers")
-            ?.toMutableSet() ?: mutableSetOf()
-        updateUserLists()
-        updateCreateButtonState()
-    }
-
 
     private fun setupUserSearch() {
         binding.searchUserInput.addTextChangedListener(object : TextWatcher {
@@ -184,7 +158,6 @@ class CreateGroupActivity : AppCompatActivity() {
         })
     }
 
-
     private fun setupCreateButton() {
         binding.createButton.isEnabled = false
         binding.createButton.setOnClickListener {
@@ -195,11 +168,6 @@ class CreateGroupActivity : AppCompatActivity() {
                 createGroup(name, description)
             }
         }
-    }
-
-    private fun clearErrors() {
-        binding.groupNameLayout.error = null
-        binding.descriptionLayout.error = null
     }
 
     private fun validateInputs(name: String, description: String): Boolean {
@@ -228,7 +196,6 @@ class CreateGroupActivity : AppCompatActivity() {
             }
         }
 
-        // Changed from userAdapter.getSelectedUsers() to selectedUsers
         if (selectedUsers.isEmpty()) {
             Toast.makeText(this, "Please select at least one member", Toast.LENGTH_SHORT).show()
             isValid = false
@@ -239,79 +206,128 @@ class CreateGroupActivity : AppCompatActivity() {
 
     private fun createGroup(name: String, description: String) {
         val currentUserUid = auth.currentUser?.uid ?: run {
-            Toast.makeText(this, "User not logged in", Toast.LENGTH_SHORT).show()
+            Log.e(TAG, "No current user found when creating group")
+            Toast.makeText(this, "Authentication error", Toast.LENGTH_SHORT).show()
             return
         }
 
+        Log.d(TAG, "Starting group creation process")
         binding.loadingIndicator.visibility = View.VISIBLE
         binding.createButton.isEnabled = false
 
-        // Changed from userAdapter.getSelectedUsers() to selectedUsers
-        val selectedUsersList = selectedUsers.toSet()
-
+        val groupId = db.collection("groups").document().id
         val group = Group(
-            groupId = db.collection("groups").document().id,
+            groupId = groupId,
             name = name,
             description = description,
             adminId = currentUserUid,
-            members = mutableListOf(), // Empty member list initially
+            members = mutableListOf(currentUserUid),
+            tasks = listOf(),
             createdAt = System.currentTimeMillis(),
             lastActivity = System.currentTimeMillis()
         )
 
-        db.collection("groups")
-            .document(group.groupId)
+        Log.d(TAG, "Creating group with ID: $groupId")
+        db.collection("groups").document(groupId)
             .set(group)
             .addOnSuccessListener {
-                createInvitations(group.groupId, selectedUsersList)
+                Log.d(TAG, "Group created successfully")
+                createInvitationsSequentially(groupId, selectedUsers.toSet())
             }
-            .addOnFailureListener { e ->
-                Toast.makeText(this, "Failed to create group: ${e.message}", Toast.LENGTH_SHORT).show()
+            .addOnFailureListener { exception ->
+                Log.e(TAG, "Error creating group", exception)
+                Toast.makeText(
+                    this,
+                    "Failed to create group: ${exception.message}",
+                    Toast.LENGTH_SHORT
+                ).show()
                 binding.loadingIndicator.visibility = View.GONE
                 binding.createButton.isEnabled = true
             }
     }
 
-    private fun createInvitations(groupId: String, selectedUsers: Set<String>) {
+    private fun createInvitationsSequentially(groupId: String, selectedUsers: Set<String>) {
+        Log.d(TAG, "Starting sequential invitation creation for ${selectedUsers.size} users")
         val currentUserUid = auth.currentUser?.uid ?: run {
-            Toast.makeText(this, "User not logged in", Toast.LENGTH_SHORT).show()
+            Log.e(TAG, "No current user found when creating invitations")
+            Toast.makeText(this, "Authentication error", Toast.LENGTH_SHORT).show()
             return
         }
 
-        val batch = db.batch()
+        var successCount = 0
+        var failureCount = 0
 
-        selectedUsers.forEach { userId ->
-            db.collection("groupInvitations")
-                .whereEqualTo("groupId", groupId)
-                .whereEqualTo("invitedUser", userId)
-                .get()
-                .addOnCompleteListener { task ->
-                    if (task.isSuccessful && task.result.isEmpty) {
-                        val invitationRef = db.collection("groupInvitations").document()
-                        val invitation = GroupInvitation(
-                            invitationId = invitationRef.id,
-                            groupId = groupId,
-                            invitedBy = currentUserUid,
-                            invitedUser = userId,
-                            status = "pending",
-                            timestamp = System.currentTimeMillis()
-                        )
-                        batch.set(invitationRef, invitation)
-                    }
+        fun createNextInvitation(users: Iterator<String>) {
+            if (!users.hasNext()) {
+                // All invitations processed
+                Log.d(TAG, "Finished creating invitations. Success: $successCount, Failed: $failureCount")
+                val message = when {
+                    failureCount == 0 -> "Group created and all invitations sent"
+                    successCount == 0 -> "Group created but failed to send invitations"
+                    else -> "Group created. Sent $successCount invitations, $failureCount failed"
+                }
+                Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+                binding.loadingIndicator.visibility = View.GONE
+                finish()
+                return
+            }
+
+            val userId = users.next()
+            val invitationRef = db.collection("groupInvitations").document()
+            val invitation = GroupInvitation(
+                invitationId = invitationRef.id,
+                groupId = groupId,
+                invitedBy = currentUserUid,
+                invitedUser = userId,
+                status = "pending",
+                timestamp = System.currentTimeMillis()
+            )
+
+            invitationRef.set(invitation)
+                .addOnSuccessListener {
+                    Log.d(TAG, "Successfully created invitation for user: $userId")
+                    successCount++
+                    createNextInvitation(users)
+                }
+                .addOnFailureListener { exception ->
+                    Log.e(TAG, "Failed to create invitation for user: $userId", exception)
+                    failureCount++
+                    createNextInvitation(users)
                 }
         }
 
-        batch.commit()
-            .addOnSuccessListener {
-                Toast.makeText(this, "Invitations sent successfully", Toast.LENGTH_SHORT).show()
-            }
-            .addOnFailureListener { e ->
-                Toast.makeText(this, "Failed to send some invitations: ${e.message}", Toast.LENGTH_SHORT).show()
-            }
-            .addOnCompleteListener {
-                binding.loadingIndicator.visibility = View.GONE
-                binding.createButton.isEnabled = true
-                finish()
-            }
+        // Start the sequential creation process
+        createNextInvitation(selectedUsers.iterator())
+    }
+
+    private fun clearErrors() {
+        binding.groupNameLayout.error = null
+        binding.descriptionLayout.error = null
+    }
+
+    private fun updateCreateButtonState() {
+        binding.createButton.isEnabled = selectedUsers.isNotEmpty()
+        updateSelectedUsersCount()
+    }
+
+    private fun updateSelectedUsersCount() {
+        val count = selectedUsers.size
+        binding.selectedUsersCount.apply {
+            text = "Selected users: $count"
+            visibility = if (count > 0) View.VISIBLE else View.GONE
+        }
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putStringArrayList("selectedUsers", ArrayList(selectedUsers))
+    }
+
+    override fun onRestoreInstanceState(savedInstanceState: Bundle) {
+        super.onRestoreInstanceState(savedInstanceState)
+        selectedUsers = savedInstanceState.getStringArrayList("selectedUsers")
+            ?.toMutableSet() ?: mutableSetOf()
+        updateUserLists()
+        updateCreateButtonState()
     }
 }

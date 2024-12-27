@@ -302,28 +302,70 @@ class ChatActivity : AppCompatActivity() {
     }
 
     private fun setupMessageListener() {
-
-        db.collection("groups").document(groupId).collection("tasks").document(taskId).collection("chats")
+        // Reference to the chats collection
+        val chatsRef = db.collection("groups")
+            .document(groupId)
+            .collection("tasks")
+            .document(taskId)
+            .collection("chats")
             .orderBy("timestamp", Query.Direction.ASCENDING)
-            .addSnapshotListener { snapshot, e ->
-                if (e != null) {
 
-                    Log.e("ChatActivity", "Listen failed: ${e.message}", e) // Log the full error
-                    Toast.makeText(this, "Error loading messages: ${e.message}", Toast.LENGTH_LONG)
-                        .show() // Show error message
-                    return@addSnapshotListener
-                }
+        // Add real-time listener with metadata
+        chatsRef.addSnapshotListener(this) { snapshot, error ->
+            if (error != null) {
+                Log.e("ChatActivity", "Listen failed: ${error.message}", error)
+                Toast.makeText(this, "Error loading messages: ${error.message}", Toast.LENGTH_LONG).show()
+                return@addSnapshotListener
+            }
 
-                val newMessages = snapshot?.documents?.mapNotNull { doc ->
-                    doc.toObject(Chat::class.java)
-                } ?: emptyList()
+            if (snapshot == null) return@addSnapshotListener
 
-                adapter.submitList(newMessages)
+            // Check if this is a local or server update
+            val source = if (snapshot.metadata.hasPendingWrites()) {
+                "Local"
+            } else {
+                "Server"
+            }
 
+            Log.d("ChatActivity", "Data source: $source")
+
+            val newMessages = snapshot.documents.mapNotNull { doc ->
+                doc.toObject(Chat::class.java)
+            }
+
+            // Update the adapter with new messages
+            adapter.submitList(newMessages) {
+                // This callback is called after the list update is complete
                 if (newMessages.isNotEmpty()) {
-                    recyclerView.smoothScrollToPosition(newMessages.size - 1)
+                    // Check if we're near the bottom before auto-scrolling
+                    val layoutManager = recyclerView.layoutManager as LinearLayoutManager
+                    val lastVisibleItem = layoutManager.findLastVisibleItemPosition()
+                    val totalItems = layoutManager.itemCount
+
+                    // If we're within 3 items of the bottom, scroll down
+                    if (totalItems - lastVisibleItem <= 3) {
+                        recyclerView.post {
+                            recyclerView.smoothScrollToPosition(newMessages.size - 1)
+                        }
+                    }
                 }
             }
+        }
+
+        // Add scroll listener to load more messages when needed
+        recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                super.onScrolled(recyclerView, dx, dy)
+
+                val layoutManager = recyclerView.layoutManager as LinearLayoutManager
+                val firstVisibleItem = layoutManager.findFirstVisibleItemPosition()
+
+                // If we're near the top, we could implement pagination here
+                if (firstVisibleItem == 0) {
+                    // TODO: Implement pagination if needed
+                }
+            }
+        })
     }
     private fun copyMessageToClipboard(chat: Chat) {
 
