@@ -15,6 +15,12 @@
         android:orientation="vertical"
         app:layout_constraintGuide_percent=".1" />
     <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/v_guideline2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintGuide_percent=".035" />
+    <androidx.constraintlayout.widget.Guideline
         android:id="@+id/v_guideline3"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -79,17 +85,17 @@
         android:background="@drawable/chat_input_background"
         app:layout_constraintBottom_toBottomOf="parent">
 
-        <ImageButton
-            android:id="@+id/attachmentButton"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="Attach file"
-            android:src="@drawable/baseline_attach_file_24"
-            android:padding="8dp"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:tint="@color/material_dynamic_neutral50" />
+<!--        <ImageButton-->
+<!--            android:id="@+id/attachmentButton"-->
+<!--            android:layout_width="40dp"-->
+<!--            android:layout_height="40dp"-->
+<!--            android:background="?attr/selectableItemBackgroundBorderless"-->
+<!--            android:contentDescription="Attach file"-->
+<!--            android:src="@drawable/baseline_attach_file_24"-->
+<!--            android:padding="8dp"-->
+<!--            app:layout_constraintBottom_toBottomOf="parent"-->
+<!--            app:layout_constraintStart_toStartOf="parent"-->
+<!--            app:tint="@color/material_dynamic_neutral50" />-->
 
         <EditText
             android:id="@+id/messageInput"
@@ -106,7 +112,8 @@
             android:layout_marginHorizontal="8dp"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toStartOf="@id/sendButton"
-            app:layout_constraintStart_toEndOf="@id/attachmentButton" />
+            android:layout_marginLeft="10dp"
+            app:layout_constraintStart_toStartOf="parent" />
 
         <ImageButton
             android:id="@+id/sendButton"

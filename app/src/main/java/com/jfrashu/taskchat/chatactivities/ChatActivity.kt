@@ -108,7 +108,7 @@ class ChatActivity : AppCompatActivity() {
 // Setup click listeners
         binding.backButton.setOnClickListener { onBackPressed() }
         binding.sendButton.setOnClickListener { sendMessage() }
-        binding.attachmentButton.setOnClickListener { showAttachmentDialog() }
+//        binding.attachmentButton.setOnClickListener { showAttachmentDialog() }
 
     }
     private fun setupBackButton() {
@@ -184,13 +184,23 @@ class ChatActivity : AppCompatActivity() {
                         if (taskStatus == "completed") {
                             binding.messageInput.isEnabled = false
                             binding.sendButton.isEnabled = false
-                            binding.attachmentButton.isEnabled = false
+
+                            binding.messageInput.hint = "Task completed - Chat is read-only" // Set the hint here
 
                             Toast.makeText(
                                 this, "Task completed - Chat is read-only", Toast.LENGTH_SHORT
                             ).show()
-
                         }
+                        else if(taskStatus == "pending"){
+                                binding.messageInput.isEnabled = false
+                                binding.sendButton.isEnabled = false
+
+                                binding.messageInput.hint = "Task is pending & cannot chat yet" // Set the hint here
+
+                                Toast.makeText(
+                                    this, "Task is pending & cannot chat yet", Toast.LENGTH_SHORT
+                                ).show()
+                            }
                         setupMessageListener()
 
                         binding.chatNameTextView.text = taskDoc.getString("title") ?: "Task Chat"
@@ -213,6 +223,7 @@ class ChatActivity : AppCompatActivity() {
     private fun sendMessage(type: String = "text", attachmentUrl: String = "") {
 
         if (taskStatus == "completed") {
+
             Toast.makeText(this, "Cannot send messages in completed tasks", Toast.LENGTH_SHORT)
                 .show()
             return

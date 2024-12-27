@@ -164,6 +164,18 @@
         app:layout_constraintStart_toEndOf="@id/v_guideline1"
         app:layout_constraintEnd_toStartOf="@id/v_guideline2" />
 
+<!--    Forgot password-->
+    <TextView
+        android:id="@+id/forgotPassword"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Forgot Password?"
+        android:clickable="true"
+        android:textColor="@color/md_theme_onPrimaryFixedVariant"
+        android:textSize="14sp"
+        app:layout_constraintTop_toBottomOf="@id/h_guideline6"
+        app:layout_constraintBottom_toTopOf="@id/h_guideline7"
+        app:layout_constraintEnd_toStartOf="@id/v_guideline2" />
     <!-- Register TextView -->
     <TextView
         android:id="@+id/register"

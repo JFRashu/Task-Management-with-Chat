@@ -11,6 +11,7 @@ import com.google.android.material.chip.Chip
 import com.google.firebase.firestore.FirebaseFirestore
 import com.jfrashu.taskchat.R
 import com.jfrashu.taskchat.dataclasses.Task
+import com.jfrashu.taskchat.dataclasses.User
 
 class TaskInfoActivity : AppCompatActivity() {
     private lateinit var taskTitleText: TextView
@@ -85,7 +86,10 @@ class TaskInfoActivity : AppCompatActivity() {
             .addOnSuccessListener { document ->
                 if (document != null && document.exists()) {
                     document.toObject(Task::class.java)?.let { task ->
+                        // First update UI with available task data
                         updateUI(task)
+                        // Then fetch creator's information
+                        fetchCreatorInfo(task.createdBy)
                     }
                 } else {
                     Toast.makeText(this, "Task not found", Toast.LENGTH_SHORT).show()
@@ -98,11 +102,28 @@ class TaskInfoActivity : AppCompatActivity() {
             }
     }
 
+    private fun fetchCreatorInfo(creatorId: String) {
+        FirebaseFirestore.getInstance()
+            .collection("users")
+            .document(creatorId)
+            .get()
+            .addOnSuccessListener { document ->
+                document.toObject(User::class.java)?.let { user ->
+                    // Update the creator text with the user's display name
+                    createdByText.text = "Created by: ${user.displayName}"
+                }
+            }
+            .addOnFailureListener { e ->
+                // If we fail to get the user info, leave the creator ID as is
+                Toast.makeText(this, "Error loading creator info: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
+    }
+
     private fun updateUI(task: Task) {
         taskTitleText.text = task.title
         descriptionText.text = task.description
         lastMessageText.text = "Last message: ${if (task.lastMessage.isNotEmpty()) task.lastMessage else "No messages yet"}"
-        createdByText.text = "Created by: ${task.createdBy}"
+        createdByText.text = "Created by: ${task.createdBy}" // This will be updated when user info is fetched
         createdAtText.text = "Created: ${DateUtils.getRelativeTimeSpanString(task.createdAt)}"
         lastActivityText.text = "Last activity: ${DateUtils.getRelativeTimeSpanString(task.lastActivity)}"
 
@@ -114,6 +135,7 @@ class TaskInfoActivity : AppCompatActivity() {
             "completed" -> statusToggleGroup.check(R.id.completedButton)
         }
     }
+
 
     private fun updateTaskStatus(newStatus: String) {
         val groupId = this.groupId ?: return

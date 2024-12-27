@@ -8,12 +8,14 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
-import com.jfrashu.taskchat.WelcomeActivity
+import com.google.firebase.auth.FirebaseAuthInvalidUserException
+import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
 import com.jfrashu.taskchat.databinding.ActivityLoginBinding
 import com.jfrashu.taskchat.registeractivities.RegisterStep1Activity
 import android.content.SharedPreferences
 import androidx.appcompat.app.AlertDialog
 import com.jfrashu.taskchat.groupactivities.GroupActivity
+import com.jfrashu.taskchat.network.NetworkUtils
 
 class LoginActivity : AppCompatActivity() {
     private lateinit var binding: ActivityLoginBinding
@@ -64,7 +66,55 @@ class LoginActivity : AppCompatActivity() {
             register.setOnClickListener {
                 startActivity(Intent(this@LoginActivity, RegisterStep1Activity::class.java))
             }
+            // Add click listener for forgot password
+            forgotPassword.setOnClickListener {
+                showForgotPasswordDialog()
+            }
         }
+    }
+    private fun showForgotPasswordDialog() {
+        val emailInput = binding.emailField.text.toString().trim()
+
+        if (emailInput.isEmpty()) {
+            AlertDialog.Builder(this)
+                .setTitle("Reset Password")
+                .setMessage("Please enter your email address in the email field")
+                .setPositiveButton("OK", null)
+                .show()
+            return
+        }
+
+        AlertDialog.Builder(this)
+            .setTitle("Reset Password")
+            .setMessage("Send password reset email to: $emailInput?")
+            .setPositiveButton("Send") { _, _ ->
+                sendPasswordResetEmail(emailInput)
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    private fun sendPasswordResetEmail(email: String) {
+        if (!NetworkUtils.isNetworkAvailable(this)) {
+            showToast("No internet connection available")
+            return
+        }
+
+        auth.sendPasswordResetEmail(email)
+            .addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                    showToast("Password reset email sent to $email")
+                } else {
+                    when (task.exception) {
+                        is FirebaseAuthInvalidUserException -> {
+                            showToast("No user found with this email address")
+                        }
+                        else -> {
+                            showToast("Failed to send reset email: ${task.exception?.message}")
+                        }
+                    }
+                }
+            }
     }
 
     private fun validateFields() {
@@ -82,32 +132,22 @@ class LoginActivity : AppCompatActivity() {
     }
 
     private fun signIn(email: String, password: String) {
+        if (!NetworkUtils.isNetworkAvailable(this)) {
+            showToast("No internet connection available")
+            binding.signinbtn.isEnabled = true
+            return
+        }
+
         binding.signinbtn.isEnabled = false // Disable button during authentication
 
         auth.signInWithEmailAndPassword(email, password)
             .addOnCompleteListener(this) { task ->
                 if (task.isSuccessful) {
-                    val user = auth.currentUser
-                    if (user != null) {
-                        if (user.isEmailVerified) {
-                            // Save credentials if "Remember me" is checked
-                            saveCredentialsIfRequested(email, password)
-
-                            // Update user status to online
-                            updateUserStatus(user.uid, "online")
-                            showToast("You Have Successfully Logged In")
-                            // Navigate to Welcome Activity
-                            startActivity(Intent(this, GroupActivity::class.java))
-                            finish()
-                        } else {
-                            showEmailVerificationDialog(user.email ?: "")
-                            auth.signOut()
-                        }
-                    }
+                    handleSuccessfulSignIn()
                 } else {
-                    showToast("Authentication failed: ${task.exception?.message}")
-                    binding.signinbtn.isEnabled = true
+                    handleSignInError(task.exception)
                 }
+                binding.signinbtn.isEnabled = true
             }
     }
 
@@ -118,6 +158,38 @@ class LoginActivity : AppCompatActivity() {
                 "lastActive" to System.currentTimeMillis()
             ))
     }
+    private fun handleSignInError(exception: Exception?) {
+        when (exception) {
+            is FirebaseAuthInvalidUserException -> {
+                showToast("No user found with this email address")
+                binding.emailField.error = "User not found"
+            }
+            is FirebaseAuthInvalidCredentialsException -> {
+                showToast("Incorrect password")
+                binding.passwordField.error = "Incorrect password"
+            }
+            else -> {
+                showToast("Authentication failed: ${exception?.message}")
+            }
+        }
+    }
+    private fun handleSuccessfulSignIn() {
+        val user = auth.currentUser
+        if (user != null) {
+            if (user.isEmailVerified) {
+                saveCredentialsIfRequested(binding.emailField.text.toString().trim(),
+                    binding.passwordField.text.toString())
+                updateUserStatus(user.uid, "online")
+                showToast("You Have Successfully Logged In")
+                startActivity(Intent(this, GroupActivity::class.java))
+                finish()
+            } else {
+                showEmailVerificationDialog(user.email ?: "")
+                auth.signOut()
+            }
+        }
+    }
+
 
     private fun saveCredentialsIfRequested(email: String, password: String) {
         if (binding.rememberMeCheckbox.isChecked) {
@@ -160,6 +232,11 @@ class LoginActivity : AppCompatActivity() {
     }
 
     private fun resendVerificationEmail() {
+        if (!NetworkUtils.isNetworkAvailable(this)) {
+            showToast("No internet connection available")
+            return
+        }
+
         val user = auth.currentUser
         user?.sendEmailVerification()
             ?.addOnCompleteListener { task ->
@@ -170,6 +247,7 @@ class LoginActivity : AppCompatActivity() {
                 }
             }
     }
+
 
     private fun showToast(message: String) {
         Toast.makeText(this, message, Toast.LENGTH_LONG).show()
