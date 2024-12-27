@@ -24,6 +24,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.Query
 import com.jfrashu.taskchat.R
 import com.jfrashu.taskchat.databinding.ActivityChatBinding
@@ -39,6 +40,8 @@ class ChatActivity : AppCompatActivity() {
     private var groupId: String = ""
     private var taskStatus: String = ""
     private var pendingDownloadChat: Chat? = null
+    private var chatListener: ListenerRegistration? = null // Add a listener registration
+
 
     private val currentUserId: String
         get() = FirebaseAuth.getInstance().currentUser?.uid ?: ""
@@ -105,7 +108,7 @@ class ChatActivity : AppCompatActivity() {
             .collection("chats")
             .orderBy("timestamp", Query.Direction.ASCENDING)
 
-        chatsRef.addSnapshotListener(this) { snapshot, error ->
+        chatListener = chatsRef.addSnapshotListener { snapshot, error -> // Assign the registration
             if (error != null) {
                 Log.e("ChatActivity", "Listen failed: ${error.message}", error)
                 Toast.makeText(this, "Error loading messages: ${error.message}", Toast.LENGTH_LONG).show()
@@ -119,32 +122,18 @@ class ChatActivity : AppCompatActivity() {
 
                 adapter.submitList(newMessages) {
                     if (newMessages.isNotEmpty()) {
-                        val layoutManager = recyclerView.layoutManager as LinearLayoutManager
-                        val lastVisibleItem = layoutManager.findLastVisibleItemPosition()
-                        val totalItems = layoutManager.itemCount
-                        val isNearBottom = totalItems - lastVisibleItem <= 3
-
-                        if (isNearBottom) {
-                            recyclerView.post {
-                                recyclerView.smoothScrollToPosition(newMessages.size - 1)
-                            }
+                        recyclerView.post {
+                            recyclerView.smoothScrollToPosition(newMessages.size - 1)
                         }
                     }
                 }
             }
         }
+    }
 
-        recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
-            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
-                super.onScrolled(recyclerView, dx, dy)
-                val layoutManager = recyclerView.layoutManager as LinearLayoutManager
-                val firstVisibleItem = layoutManager.findFirstVisibleItemPosition()
-
-                if (firstVisibleItem == 0) {
-                    loadMoreMessages(chatsRef)
-                }
-            }
-        })
+    override fun onDestroy() {
+        super.onDestroy()
+        chatListener?.remove() // Detach the listener
     }
 
     private fun loadMoreMessages(query: Query) {
