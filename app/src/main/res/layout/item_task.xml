@@ -22,6 +22,7 @@
             android:src="@drawable/baseline_task_24"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
+
             app:tint="@color/md_theme_onPrimaryFixedVariant"/>
 
         <TextView
@@ -55,7 +56,7 @@
             android:textSize="14sp"
             android:maxLines="2"
             android:ellipsize="end"
-            android:textColor="@android:color/darker_gray"
+            android:textColor="#5364B8"
             app:layout_constraintStart_toStartOf="@id/taskTitle"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toBottomOf="@id/taskTitle"
@@ -86,6 +87,7 @@
             android:text="Last activity:"
             android:textSize="12sp"
             android:textStyle="italic"
+            android:textColor="#011062"
             app:layout_constraintStart_toStartOf="@id/taskTitle"
             app:layout_constraintTop_toBottomOf="@id/taskDescription"/>
 
@@ -96,6 +98,7 @@
             android:layout_marginStart="4dp"
             android:textSize="12sp"
             android:textStyle="italic"
+            android:textColor="#011062"
             app:layout_constraintStart_toEndOf="@id/lastActivityLabel"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="@id/lastActivityLabel"

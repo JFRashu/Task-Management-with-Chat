@@ -36,6 +36,7 @@
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/groupNameInput"
+                    android:textColor="#1A266D"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:inputType="text"
@@ -47,6 +48,7 @@
                 style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:textColor="#1A266D"
                 android:layout_marginTop="16dp"
                 android:hint="Description">
 
@@ -114,6 +116,7 @@
                     android:layout_height="wrap_content"
                     android:gravity="center"
                     android:padding="8dp"
+                    android:textColor="#1F2449"
                     android:text="No users selected"
                     android:visibility="visible"/>
 
@@ -122,6 +125,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="Available Users"
+                    android:textColor="#2E3B85"
                     android:textStyle="bold"
                     android:layout_marginTop="16dp"
                     android:layout_marginBottom="8dp"

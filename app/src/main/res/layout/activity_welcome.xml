@@ -125,7 +125,7 @@
         android:paddingTop="10dp"
         android:text="Welcome to the APP !!!"
         android:textAlignment="center"
-        android:textColor="@color/md_theme_onPrimaryFixedVariant"
+        android:textColor="#1A266D"
         android:textStyle="bold"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"

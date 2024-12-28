@@ -12,7 +12,7 @@
         android:layout_height="?attr/actionBarSize"
         android:background="@color/md_theme_inverseOnSurface_mediumContrast"
         android:elevation="4dp"
-        app:titleTextColor="@color/md_theme_onPrimaryFixedVariant"
+        android:textColor="#1A266D"
         android:theme="@style/ThemeOverlay.MaterialComponents.Dark.ActionBar"
         app:layout_constraintTop_toTopOf="parent"
         app:navigationIcon="@drawable/baseline_arrow_back_24"

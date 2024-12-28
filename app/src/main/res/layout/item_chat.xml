@@ -35,7 +35,7 @@
             android:id="@+id/senderName"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textColor="@color/md_theme_onBackground"
+            android:textColor="#22242E"
             android:textSize="13sp"
             android:textStyle="bold"
             android:paddingStart="7dp"

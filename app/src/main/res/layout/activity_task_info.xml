@@ -52,6 +52,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:textAppearance="?attr/textAppearanceHeadlineSmall"
+                        android:textColor="#06135F"
                         tools:text="Task Title" />
 
                     <com.google.android.material.chip.ChipGroup
@@ -114,13 +115,16 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Description"
-                        android:textAppearance="?attr/textAppearanceTitleMedium" />
+
+                        android:textAppearance="?attr/textAppearanceTitleMedium"
+                        android:textColor="#011062"/>
 
                     <TextView
                         android:id="@+id/descriptionText"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
+                        android:textColor="#364181"
                         android:textAppearance="?attr/textAppearanceBodyLarge" />
 
 
