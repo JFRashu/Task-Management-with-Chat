@@ -15,6 +15,8 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.jfrashu.taskchat.R
 import com.jfrashu.taskchat.dataclasses.User
 import com.jfrashu.taskchat.WelcomeActivity
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.firebase.auth.EmailAuthProvider
 
 class MyProfileInfoActivity : AppCompatActivity() {
     private lateinit var displayNameInput: TextInputEditText
@@ -25,6 +27,9 @@ class MyProfileInfoActivity : AppCompatActivity() {
     private lateinit var logoutButton: MaterialButton
     private lateinit var auth: FirebaseAuth
 
+    private lateinit var changePasswordButton: MaterialButton
+
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_my_profile_info)
@@ -34,6 +39,7 @@ class MyProfileInfoActivity : AppCompatActivity() {
         loadUserData()
         setupSaveButton()
         setupLogoutButton()
+        setupPasswordButtons()
 
         findViewById<MaterialToolbar>(R.id.toolbar).setNavigationOnClickListener {
             finish()
@@ -47,7 +53,123 @@ class MyProfileInfoActivity : AppCompatActivity() {
         lastActiveText = findViewById(R.id.lastActiveText)
         saveFab = findViewById(R.id.saveFab)
         logoutButton = findViewById(R.id.logoutButton)
+        changePasswordButton = findViewById(R.id.changePasswordButton)
     }
+    private fun setupPasswordButtons() {
+        if (isFinishing || isDestroyed) return
+
+        changePasswordButton.setOnClickListener {
+            showChangePasswordDialog()
+        }
+    }
+
+    private fun showChangePasswordDialog() {
+        if (isFinishing || isDestroyed) return
+
+        val dialogView = layoutInflater.inflate(R.layout.dialog_change_password, null)
+        val currentPasswordInput = dialogView.findViewById<TextInputEditText>(R.id.currentPasswordInput)
+        val newPasswordInput = dialogView.findViewById<TextInputEditText>(R.id.newPasswordInput)
+        val confirmPasswordInput = dialogView.findViewById<TextInputEditText>(R.id.confirmPasswordInput)
+
+        MaterialAlertDialogBuilder(this)
+            .setTitle("Change Password")
+            .setView(dialogView)
+            .setPositiveButton("Change") { dialog, _ ->
+                val currentPassword = currentPasswordInput.text.toString()
+                val newPassword = newPasswordInput.text.toString()
+                val confirmPassword = confirmPasswordInput.text.toString()
+
+                if (validatePasswordInputs(newPassword, confirmPassword)) {
+                    changePassword(currentPassword, newPassword)
+                }
+                dialog.dismiss()
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    private fun validatePasswordInputs(newPassword: String, confirmPassword: String): Boolean {
+        if (newPassword.length < 6) {
+            showToast("Password must be at least 6 characters")
+            return false
+        }
+
+        if (newPassword != confirmPassword) {
+            showToast("Passwords don't match")
+            return false
+        }
+
+        return true
+    }
+
+    private fun changePassword(currentPassword: String, newPassword: String) {
+        if (isFinishing || isDestroyed) return
+
+        val user = auth.currentUser
+        val email = user?.email
+
+        if (user == null || email == null) {
+            showToast("User not authenticated")
+            return
+        }
+
+        // First, reauthenticate the user
+        val credential = EmailAuthProvider.getCredential(email, currentPassword)
+
+        user.reauthenticate(credential)
+            .addOnSuccessListener {
+                if (isFinishing || isDestroyed) return@addOnSuccessListener
+
+                // Then change the password
+                user.updatePassword(newPassword)
+                    .addOnSuccessListener {
+                        if (isFinishing || isDestroyed) return@addOnSuccessListener
+                        showToast("Password updated successfully")
+
+                        // Log user out for security
+                        updateUserStatus("offline")
+                        auth.signOut()
+                        clearUserSession()
+                        navigateToWelcome()
+                    }
+                    .addOnFailureListener { e ->
+                        if (isFinishing || isDestroyed) return@addOnFailureListener
+                        showToast("Failed to update password: ${e.message}")
+                    }
+            }
+            .addOnFailureListener { e ->
+                if (isFinishing || isDestroyed) return@addOnFailureListener
+                showToast("Current password is incorrect")
+            }
+    }
+
+    private fun resetPassword() {
+        if (isFinishing || isDestroyed) return
+
+        val email = emailInput.text.toString()
+
+        if (email.isEmpty()) {
+            showToast("Please enter your email")
+            return
+        }
+
+        auth.sendPasswordResetEmail(email)
+            .addOnSuccessListener {
+                if (isFinishing || isDestroyed) return@addOnSuccessListener
+                showToast("Password reset email sent")
+            }
+            .addOnFailureListener { e ->
+                if (isFinishing || isDestroyed) return@addOnFailureListener
+                showToast("Failed to send reset email: ${e.message}")
+            }
+    }
+
+    private fun showToast(message: String) {
+        if (!isFinishing && !isDestroyed) {
+            Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+        }
+    }
+
 
     private fun setupLogoutButton() {
         logoutButton.text = "Logout" // Fix the button text

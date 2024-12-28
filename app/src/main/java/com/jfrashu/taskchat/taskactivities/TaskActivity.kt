@@ -4,13 +4,13 @@ import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.widget.ImageButton
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.Query
 import com.jfrashu.taskchat.R
 import com.jfrashu.taskchat.chatactivities.ChatActivity
@@ -25,6 +25,7 @@ class TaskActivity : AppCompatActivity() {
     private var groupName: String? = null
     private var isAdmin: Boolean = false
     private var currentUserId: String? = null
+    private var snapshotListener: ListenerRegistration? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -40,7 +41,7 @@ class TaskActivity : AppCompatActivity() {
         isAdmin = intent.getBooleanExtra("isAdmin", false)
 
         if (groupId == null || currentUserId == null) {
-            Toast.makeText(this, "Invalid group or user information", Toast.LENGTH_SHORT).show()
+            showToast("Invalid group or user information")
             finish()
             return
         }
@@ -80,7 +81,6 @@ class TaskActivity : AppCompatActivity() {
     private fun setupRecyclerView() {
         recyclerView = findViewById(R.id.taskRecyclerView)
         taskAdapter = TaskAdapter(emptyList()) { task ->
-            // Call navigateToSpecificTask when a task is clicked
             navigateToSpecificTask(task.taskId)
         }
         recyclerView.apply {
@@ -88,69 +88,84 @@ class TaskActivity : AppCompatActivity() {
             adapter = taskAdapter
         }
     }
-    @Override
-    override fun onRestart() {
-        super.onRestart()
-        setupUI()
-        setupRecyclerView()
-        fetchTasks()
-    }
 
     private fun navigateToSpecificTask(taskId: String) {
-        groupId?.let { gId ->
-            // Verify user has access to this task
-            db.collection("groups").document(gId)
-                .collection("tasks")
-                .document(taskId)
-                .get()
-                .addOnSuccessListener { documentSnapshot ->
-                    documentSnapshot.toObject(Task::class.java)?.let { task ->
-                        // Navigate to TaskInfoActivity with the task details
-                        val intent = Intent(this, ChatActivity::class.java).apply {
-                            putExtra("groupId", gId)  // Pass the groupId
-                            putExtra("taskId", taskId)  // Pass the taskId
+        if (!isFinishing && !isDestroyed) {
+            groupId?.let { gId ->
+                db.collection("groups").document(gId)
+                    .collection("tasks")
+                    .document(taskId)
+                    .get()
+                    .addOnSuccessListener { documentSnapshot ->
+                        if (!isFinishing && !isDestroyed) {
+                            documentSnapshot.toObject(Task::class.java)?.let { task ->
+                                val intent = Intent(this, ChatActivity::class.java).apply {
+                                    putExtra("groupId", gId)
+                                    putExtra("taskId", taskId)
+                                }
+                                startActivity(intent)
+                            } ?: run {
+                                showToast("Task not found")
+                            }
                         }
-                        startActivity(intent)
-                        startActivity(intent)
-                    } ?: run {
-                        Toast.makeText(this, "Task not found", Toast.LENGTH_SHORT).show()
                     }
-                }
-                .addOnFailureListener { e ->
-                    Toast.makeText(this, "Error accessing task: ${e.message}",
-                        Toast.LENGTH_SHORT).show()
-                }
+                    .addOnFailureListener { e ->
+                        showToast("Error accessing task: ${e.message}")
+                    }
+            }
         }
     }
 
     private fun fetchTasks() {
+        // Remove previous listener if it exists
+        snapshotListener?.remove()
+
         groupId?.let { gId ->
-            db.collection("groups").document(gId)
+            snapshotListener = db.collection("groups").document(gId)
                 .collection("tasks")
                 .orderBy("lastActivity", Query.Direction.DESCENDING)
                 .addSnapshotListener { snapshot, e ->
-                    if (e != null) {
-                        Toast.makeText(this, "Error fetching tasks: ${e.message}",
-                            Toast.LENGTH_SHORT).show()
-                        return@addSnapshotListener
-                    }
+                    if (!isFinishing && !isDestroyed) {
+                        if (e != null) {
+                            showToast("Error fetching tasks: ${e.message}")
+                            return@addSnapshotListener
+                        }
 
-                    val tasks = snapshot?.documents?.mapNotNull { doc ->
-                        doc.toObject(Task::class.java)?.copy(taskId = doc.id)
-                    } ?: emptyList()
+                        val tasks = snapshot?.documents?.mapNotNull { doc ->
+                            doc.toObject(Task::class.java)?.copy(taskId = doc.id)
+                        } ?: emptyList()
 
-                    taskAdapter.updateTasks(tasks)
-                    Log.d("TaskActivity", "Fetched ${tasks.size} tasks, groupId: ${gId}") // Log the number of tasks
-                    tasks.forEach { task -> // Log each task's details
-                        Log.d("TaskActivity", "Task: ${task.title}, ${task.description}, ${task.status}, groupId: ${task.groupId}")
+                        taskAdapter.updateTasks(tasks)
+                        Log.d("TaskActivity", "Fetched ${tasks.size} tasks")
                     }
                 }
         }
-
     }
+
+    private fun showToast(message: String) {
+        if (!isFinishing && !isDestroyed) {
+            android.widget.Toast.makeText(this, message, android.widget.Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        snapshotListener?.remove()
+    }
+
     override fun onResume() {
         super.onResume()
-        // Refresh tasks when returning to this activity
-        fetchTasks()
+        if (!isFinishing && !isDestroyed) {
+            fetchTasks()
+        }
+    }
+
+    override fun onRestart() {
+        super.onRestart()
+        if (!isFinishing && !isDestroyed) {
+            setupUI()
+            setupRecyclerView()
+            fetchTasks()
+        }
     }
 }

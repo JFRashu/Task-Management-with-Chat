@@ -1,36 +1,39 @@
 package com.jfrashu.taskchat.groupactivities
 
-
 import android.content.Intent
 import android.os.Bundle
 import android.widget.ImageButton
-import android.widget.ImageView
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.widget.NestedScrollView
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
-import com.jfrashu.taskchat.R
-import com.jfrashu.taskchat.dataclasses.User
-import com.jfrashu.taskchat.profileactivities.MyProfileInfoActivity
-
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.ktx.toObject
+import com.jfrashu.taskchat.R
 import com.jfrashu.taskchat.dataclasses.Group
+import com.jfrashu.taskchat.dataclasses.User
+import com.jfrashu.taskchat.profileactivities.MyProfileInfoActivity
 import com.jfrashu.taskchat.taskactivities.TaskActivity
 
 class GroupActivity : AppCompatActivity() {
     private lateinit var db: FirebaseFirestore
     private lateinit var groupAdapter: GroupAdapter
     private lateinit var recyclerView: RecyclerView
+    private var snapshotListener: ListenerRegistration? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_group)
 
         db = FirebaseFirestore.getInstance()
+        setupUI()
+        setupRecyclerView()
+        fetchUserGroups()
+    }
+
+    private fun setupUI() {
         // Initialize menu button
         val menuButton = findViewById<ImageButton>(R.id.menuButton)
         menuButton.setOnClickListener {
@@ -40,115 +43,133 @@ class GroupActivity : AppCompatActivity() {
             }
         }
 
-        val creategroupbtn = findViewById<FloatingActionButton>(R.id.createGroupbtn)
-        creategroupbtn.setOnClickListener {
-            val intent = Intent(this, CreateGroupActivity::class.java)
-            startActivity(intent)
+        // Create group button
+        val createGroupBtn = findViewById<FloatingActionButton>(R.id.createGroupbtn)
+        createGroupBtn.setOnClickListener {
+            if (!isFinishing && !isDestroyed) {
+                startActivity(Intent(this, CreateGroupActivity::class.java))
+            }
         }
 
-        val seeRequestsbtn = findViewById<ImageButton>(R.id.groupRequestsButton)
-        seeRequestsbtn.setOnClickListener {
-            val intent = Intent(this, GroupInvitationActivity::class.java)
-            startActivity(intent)
+        // Group requests button
+        val seeRequestsBtn = findViewById<ImageButton>(R.id.groupRequestsButton)
+        seeRequestsBtn.setOnClickListener {
+            if (!isFinishing && !isDestroyed) {
+                startActivity(Intent(this, GroupInvitationActivity::class.java))
+            }
         }
-
-
-        setupRecyclerView()
-        fetchUserGroups()
     }
+
     private fun fetchAndNavigateToProfile(userId: String) {
-        db.collection("users")
-            .document(userId)
-            .get()
-            .addOnSuccessListener { document ->
-                document?.toObject(User::class.java)?.let { user ->
-                    startActivity(Intent(this, MyProfileInfoActivity::class.java).apply {
-                        putExtra("userId", user.userId)
-                        putExtra("email", user.email)
-                        putExtra("displayName", user.displayName)
-                        putExtra("status", user.status)
-                        putExtra("lastActive", user.lastActive)
-                    })
+        if (!isFinishing && !isDestroyed) {
+            db.collection("users")
+                .document(userId)
+                .get()
+                .addOnSuccessListener { document ->
+                    if (!isFinishing && !isDestroyed) {
+                        document?.toObject(User::class.java)?.let { user ->
+                            startActivity(Intent(this, MyProfileInfoActivity::class.java).apply {
+                                putExtra("userId", user.userId)
+                                putExtra("email", user.email)
+                                putExtra("displayName", user.displayName)
+                                putExtra("status", user.status)
+                                putExtra("lastActive", user.lastActive)
+                            })
+                        }
+                    }
                 }
-            }
-            .addOnFailureListener { e ->
-                Toast.makeText(this, "Error fetching profile: ${e.message}",
-                    Toast.LENGTH_SHORT).show()
-            }
+                .addOnFailureListener { e ->
+                    showToast("Error fetching profile: ${e.message}")
+                }
+        }
     }
 
     private fun setupRecyclerView() {
         recyclerView = findViewById(R.id.groupRecyclerView)
         groupAdapter = GroupAdapter(emptyList()) { group ->
-            // Navigate to TaskActivity when a group is clicked
-            val intent = Intent(this, TaskActivity::class.java).apply {
-                putExtra("groupId", group.groupId)
-                putExtra("groupName", group.name)
-                // Check if current user is admin
-                val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
-                putExtra("isAdmin", currentUserId == group.adminId)
+            if (!isFinishing && !isDestroyed) {
+                val intent = Intent(this, TaskActivity::class.java).apply {
+                    putExtra("groupId", group.groupId)
+                    putExtra("groupName", group.name)
+                    val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
+                    putExtra("isAdmin", currentUserId == group.adminId)
+                }
+                startActivity(intent)
             }
-            startActivity(intent)
         }
         recyclerView.apply {
             layoutManager = LinearLayoutManager(this@GroupActivity)
-            adapter = groupAdapter
+            adapter = this@GroupActivity.groupAdapter
         }
-    }
-    @Override
-    override fun onResume() {
-        super.onResume()
-        setupRecyclerView()
-        fetchUserGroups()
     }
 
     private fun fetchUserGroups() {
+        // Remove previous listener if it exists
+        snapshotListener?.remove()
+
         val currentUser = FirebaseAuth.getInstance().currentUser
         currentUser?.let { user ->
-            // First, create the groups collection if it doesn't exist
             createInitialGroup(user.uid)
 
-            // Then fetch groups where the current user is a member
-            db.collection("groups")
+            snapshotListener = db.collection("groups")
                 .whereArrayContains("members", user.uid)
                 .addSnapshotListener { snapshot, e ->
-                    if (e != null) {
-                        Toast.makeText(this, "Error fetching groups: ${e.message}",
-                            Toast.LENGTH_SHORT).show()
-                        return@addSnapshotListener
+                    if (!isFinishing && !isDestroyed) {
+                        if (e != null) {
+                            showToast("Error fetching groups: ${e.message}")
+                            return@addSnapshotListener
+                        }
+
+                        val groups = snapshot?.documents?.mapNotNull { doc ->
+                            doc.toObject<Group>()
+                        } ?: emptyList()
+
+                        groupAdapter.updateGroups(groups)
                     }
-
-                    val groups = snapshot?.documents?.mapNotNull { doc ->
-                        doc.toObject<Group>()
-                    } ?: emptyList()
-
-                    groupAdapter.updateGroups(groups)
                 }
         }
     }
 
     private fun createInitialGroup(userId: String) {
-        // Check if groups collection exists
-        db.collection("groups").limit(1).get()
-            .addOnSuccessListener { snapshot ->
-                if (snapshot.isEmpty) {
-                    // Create initial group
-                    val initialGroup = Group(
-                        groupId = db.collection("groups").document().id,
-                        name = "My First Group",
-                        description = "Welcome to your first group!",
-                        adminId = userId,
-                        members = listOf(userId)
-                    )
+        if (!isFinishing && !isDestroyed) {
+            db.collection("groups").limit(1).get()
+                .addOnSuccessListener { snapshot ->
+                    if (!isFinishing && !isDestroyed && snapshot.isEmpty) {
+                        val initialGroup = Group(
+                            groupId = db.collection("groups").document().id,
+                            name = "My First Group",
+                            description = "Welcome to your first group!",
+                            adminId = userId,
+                            members = listOf(userId)
+                        )
 
-                    db.collection("groups")
-                        .document(initialGroup.groupId)
-                        .set(initialGroup)
-                        .addOnFailureListener { e ->
-                            Toast.makeText(this, "Error creating initial group: ${e.message}",
-                                Toast.LENGTH_SHORT).show()
-                        }
+                        db.collection("groups")
+                            .document(initialGroup.groupId)
+                            .set(initialGroup)
+                            .addOnFailureListener { e ->
+                                showToast("Error creating initial group: ${e.message}")
+                            }
+                    }
                 }
-            }
+        }
+    }
+
+    private fun showToast(message: String) {
+        if (!isFinishing && !isDestroyed) {
+            android.widget.Toast.makeText(this, message, android.widget.Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        snapshotListener?.remove()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (!isFinishing && !isDestroyed) {
+            setupRecyclerView()
+            fetchUserGroups()
+        }
     }
 }

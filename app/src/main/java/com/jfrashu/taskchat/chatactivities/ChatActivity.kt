@@ -39,9 +39,7 @@ class ChatActivity : AppCompatActivity() {
     private var taskId: String = ""
     private var groupId: String = ""
     private var taskStatus: String = ""
-    private var pendingDownloadChat: Chat? = null
-    private var chatListener: ListenerRegistration? = null // Add a listener registration
-
+    private var snapshotListener: ListenerRegistration? = null
 
     private val currentUserId: String
         get() = FirebaseAuth.getInstance().currentUser?.uid ?: ""
@@ -62,7 +60,7 @@ class ChatActivity : AppCompatActivity() {
         groupId = intent.getStringExtra("groupId") ?: ""
 
         if (taskId.isEmpty() || groupId.isEmpty()) {
-            Toast.makeText(this, "Invalid task or group", Toast.LENGTH_SHORT).show()
+            showToast("Invalid task or group")
             finish()
             return
         }
@@ -108,10 +106,10 @@ class ChatActivity : AppCompatActivity() {
             .collection("chats")
             .orderBy("timestamp", Query.Direction.ASCENDING)
 
-        chatListener = chatsRef.addSnapshotListener { snapshot, error -> // Assign the registration
+        snapshotListener = chatsRef.addSnapshotListener(this) { snapshot, error ->
             if (error != null) {
                 Log.e("ChatActivity", "Listen failed: ${error.message}", error)
-                Toast.makeText(this, "Error loading messages: ${error.message}", Toast.LENGTH_LONG).show()
+                showToast("Error loading messages: ${error.message}")
                 return@addSnapshotListener
             }
 
@@ -122,18 +120,32 @@ class ChatActivity : AppCompatActivity() {
 
                 adapter.submitList(newMessages) {
                     if (newMessages.isNotEmpty()) {
-                        recyclerView.post {
-                            recyclerView.smoothScrollToPosition(newMessages.size - 1)
+                        val layoutManager = recyclerView.layoutManager as LinearLayoutManager
+                        val lastVisibleItem = layoutManager.findLastVisibleItemPosition()
+                        val totalItems = layoutManager.itemCount
+                        val isNearBottom = totalItems - lastVisibleItem <= 3
+
+                        if (isNearBottom) {
+                            recyclerView.post {
+                                recyclerView.smoothScrollToPosition(newMessages.size - 1)
+                            }
                         }
                     }
                 }
             }
         }
-    }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        chatListener?.remove() // Detach the listener
+        recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                super.onScrolled(recyclerView, dx, dy)
+                val layoutManager = recyclerView.layoutManager as LinearLayoutManager
+                val firstVisibleItem = layoutManager.findFirstVisibleItemPosition()
+
+                if (firstVisibleItem == 0) {
+                    loadMoreMessages(chatsRef)
+                }
+            }
+        })
     }
 
     private fun loadMoreMessages(query: Query) {
@@ -151,7 +163,7 @@ class ChatActivity : AppCompatActivity() {
 
     private fun sendMessage(type: String = "text", attachmentUrl: String = "") {
         if (taskStatus == "completed") {
-            Toast.makeText(this, "Cannot send messages in completed tasks", Toast.LENGTH_SHORT).show()
+            showToast("Cannot send messages in completed tasks")
             return
         }
 
@@ -159,7 +171,7 @@ class ChatActivity : AppCompatActivity() {
         if (messageText.isEmpty() && attachmentUrl.isEmpty()) return
 
         val currentUser = FirebaseAuth.getInstance().currentUser ?: run {
-            Toast.makeText(this, "Please sign in to send messages", Toast.LENGTH_SHORT).show()
+            showToast("Please sign in to send messages")
             return
         }
 
@@ -184,7 +196,7 @@ class ChatActivity : AppCompatActivity() {
                 binding.sendButton.isEnabled = true
             }
             .addOnFailureListener { e ->
-                Toast.makeText(this, "Failed to send message: ${e.message}", Toast.LENGTH_LONG).show()
+                showToast("Failed to send message: ${e.message}")
                 Log.e("ChatActivity", "Error sending message", e)
                 binding.sendButton.isEnabled = true
             }
@@ -195,7 +207,7 @@ class ChatActivity : AppCompatActivity() {
             .get()
             .addOnSuccessListener { taskDoc ->
                 if (!taskDoc.exists()) {
-                    Toast.makeText(this, "Task not found", Toast.LENGTH_SHORT).show()
+                    showToast("Task not found")
                     finish()
                     return@addOnSuccessListener
                 }
@@ -207,7 +219,7 @@ class ChatActivity : AppCompatActivity() {
                     .addOnSuccessListener { groupDoc ->
                         val members = groupDoc.get("members") as? List<String> ?: emptyList()
                         if (!members.contains(currentUserId)) {
-                            Toast.makeText(this, "No access to this chat", Toast.LENGTH_SHORT).show()
+                            showToast("No access to this chat")
                             finish()
                             return@addOnSuccessListener
                         }
@@ -225,12 +237,12 @@ class ChatActivity : AppCompatActivity() {
                         binding.chatNameTextView.text = taskDoc.getString("title") ?: "Task Chat"
                     }
                     .addOnFailureListener {
-                        Toast.makeText(this, "Error checking access", Toast.LENGTH_SHORT).show()
+                        showToast("Error checking access")
                         finish()
                     }
             }
             .addOnFailureListener {
-                Toast.makeText(this, "Error loading task", Toast.LENGTH_SHORT).show()
+                showToast("Error loading task")
                 finish()
             }
     }
@@ -239,7 +251,7 @@ class ChatActivity : AppCompatActivity() {
         binding.messageInput.isEnabled = false
         binding.sendButton.isEnabled = false
         binding.messageInput.hint = hint
-        Toast.makeText(this, hint, Toast.LENGTH_SHORT).show()
+        showToast(hint)
     }
 
     private fun showMessageOptionsDialog(chat: Chat) {
@@ -249,9 +261,6 @@ class ChatActivity : AppCompatActivity() {
             if (isMyMessage && taskStatus != "completed") {
                 add("Delete")
             }
-            if (chat.type == "file" && chat.attachmentUrl.isNotEmpty()) {
-                add("Download")
-            }
         }
 
         AlertDialog.Builder(this, R.style.AlertDialogTheme)
@@ -260,7 +269,6 @@ class ChatActivity : AppCompatActivity() {
                 when (options[which]) {
                     "Copy" -> copyMessageToClipboard(chat)
                     "Delete" -> confirmDeleteMessage(chat)
-                    "Download" -> downloadAttachment(chat)
                 }
             }
             .setNegativeButton("Cancel") { dialog, _ -> dialog.dismiss() }
@@ -272,7 +280,7 @@ class ChatActivity : AppCompatActivity() {
         val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
         val clip = ClipData.newPlainText("Message", chat.content)
         clipboard.setPrimaryClip(clip)
-        Toast.makeText(this, "Message copied to clipboard", Toast.LENGTH_SHORT).show()
+        showToast("Message copied to clipboard")
     }
 
     private fun confirmDeleteMessage(chat: Chat) {
@@ -286,12 +294,12 @@ class ChatActivity : AppCompatActivity() {
 
     private fun deleteMessage(chat: Chat) {
         val currentUser = FirebaseAuth.getInstance().currentUser ?: run {
-            Toast.makeText(this, "Please sign in to delete messages", Toast.LENGTH_SHORT).show()
+            showToast("Please sign in to delete messages")
             return
         }
 
         if (chat.senderId != currentUser.uid) {
-            Toast.makeText(this, "You cannot delete other users' messages", Toast.LENGTH_SHORT).show()
+            showToast("You cannot delete other users' messages")
             return
         }
 
@@ -303,87 +311,13 @@ class ChatActivity : AppCompatActivity() {
                 "isDeleted" to true
             ))
             .addOnSuccessListener {
-                Toast.makeText(this, "Message deleted", Toast.LENGTH_SHORT).show()
+                showToast("Message deleted")
             }
             .addOnFailureListener { e ->
-                Toast.makeText(this, "Failed to delete message: ${e.message}", Toast.LENGTH_LONG).show()
+                showToast("Failed to delete message: ${e.message}")
                 Log.e("ChatActivity", "Error deleting message", e)
             }
     }
-
-    private fun downloadAttachment(chat: Chat) {
-        if (chat.attachmentUrl.isEmpty()) {
-            Toast.makeText(this, "No attachment found", Toast.LENGTH_SHORT).show()
-            return
-        }
-
-        pendingDownloadChat = chat
-
-        if (checkStoragePermission()) {
-            startDownload(chat)
-        } else {
-            requestStoragePermission()
-        }
-    }
-
-    private fun checkStoragePermission(): Boolean {
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            true
-        } else {
-            ContextCompat.checkSelfPermission(
-                this,
-                Manifest.permission.WRITE_EXTERNAL_STORAGE
-            ) == PackageManager.PERMISSION_GRANTED
-        }
-    }
-
-    private fun requestStoragePermission() {
-        ActivityCompat.requestPermissions(
-            this,
-            arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE),
-            STORAGE_PERMISSION_CODE
-        )
-    }
-
-    private fun startDownload(chat: Chat) {
-        val request = DownloadManager.Request(Uri.parse(chat.attachmentUrl))
-            .setTitle("Downloading attachment")
-            .setDescription("Downloading")
-            .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
-            .setDestinationInExternalPublicDir(
-                Environment.DIRECTORY_DOWNLOADS,
-                "TaskChat_${System.currentTimeMillis()}_${chat.attachmentUrl.substringAfterLast("/")}"
-            )
-
-        val downloadManager = getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
-        downloadManager.enqueue(request)
-        Toast.makeText(this, "Download started", Toast.LENGTH_SHORT).show()
-    }
-
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<out String>,
-        grantResults: IntArray
-    ) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        when (requestCode) {
-            STORAGE_PERMISSION_CODE -> {
-                if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    pendingDownloadChat?.let { chat ->
-                        startDownload(chat)
-                        pendingDownloadChat = null
-                    }
-                } else {
-                    Toast.makeText(
-                        this,
-                        "Permission denied, cannot download files",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
-            }
-        }
-    }
-
 
     private fun setupBackButton() {
         findViewById<ImageButton>(R.id.backButton).setOnClickListener {
@@ -394,5 +328,16 @@ class ChatActivity : AppCompatActivity() {
             startActivity(intent)
             finish()
         }
+    }
+
+    private fun showToast(message: String) {
+        if (!isFinishing && !isDestroyed) {
+            Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        snapshotListener?.remove()
     }
 }

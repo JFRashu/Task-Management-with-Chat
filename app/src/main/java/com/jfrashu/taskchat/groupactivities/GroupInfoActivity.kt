@@ -18,6 +18,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.appbar.MaterialToolbar
 import android.widget.TextView
 import androidx.core.view.isVisible
+import com.google.firebase.firestore.ListenerRegistration
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -38,6 +39,8 @@ class GroupInfoActivity : AppCompatActivity() {
     private var currentUserId: String = ""
     private var currentGroup: Group? = null
 
+    private var groupListener: ListenerRegistration? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_group_info)
@@ -45,13 +48,15 @@ class GroupInfoActivity : AppCompatActivity() {
         // Initialize Firebase
         db = FirebaseFirestore.getInstance()
         auth = FirebaseAuth.getInstance()
-        currentUserId = auth.currentUser?.uid ?: ""
+        currentUserId = auth.currentUser?.uid ?: run {
+            showToast("User not authenticated")
+            finish()
+            return
+        }
 
         // Get group ID from intent
-        groupId = intent.getStringExtra("groupId")
-
-        if (groupId == null) {
-            Toast.makeText(this, "Invalid group information", Toast.LENGTH_SHORT).show()
+        groupId = intent.getStringExtra("groupId") ?: run {
+            showToast("Invalid group information")
             finish()
             return
         }
@@ -59,6 +64,119 @@ class GroupInfoActivity : AppCompatActivity() {
         initializeViews()
         fetchGroupInformation()
     }
+
+    private fun fetchGroupInformation() {
+        if (isFinishing || isDestroyed) return
+
+        // Remove any existing listener
+        groupListener?.remove()
+
+        groupId?.let { gId ->
+            groupListener = db.collection("groups").document(gId)
+                .addSnapshotListener { document, error ->
+                    if (isFinishing || isDestroyed) return@addSnapshotListener
+
+                    if (error != null) {
+                        showToast("Error fetching group info: ${error.message}")
+                        return@addSnapshotListener
+                    }
+
+                    document?.toObject(Group::class.java)?.let { group ->
+                        currentGroup = group
+                        updateUI(group)
+                        setupMembersRecyclerView(group)
+                        fetchMembers(group.members)
+                        updateAdminControls(group.adminId == currentUserId)
+                    }
+                }
+        }
+    }
+
+    private fun fetchMembers(memberIds: List<String>) {
+        if (isFinishing || isDestroyed) return
+        if (memberIds.isEmpty()) {
+            membersAdapter.updateMembers(emptyList())
+            return
+        }
+
+        db.collection("users")
+            .whereIn("userId", memberIds)
+            .get()
+            .addOnSuccessListener { documents ->
+                if (isFinishing || isDestroyed) return@addOnSuccessListener
+                val members = documents.mapNotNull { doc ->
+                    doc.toObject(User::class.java)
+                }
+                membersAdapter.updateMembers(members)
+            }
+            .addOnFailureListener { e ->
+                if (isFinishing || isDestroyed) return@addOnFailureListener
+                showToast("Error fetching members: ${e.message}")
+            }
+    }
+
+    private fun saveGroupChanges() {
+        if (isFinishing || isDestroyed) return
+
+        val newName = groupNameInput.text.toString().trim()
+        val newDescription = groupDescriptionInput.text.toString().trim()
+
+        // Validate inputs
+        if (newName.length < 3) {
+            groupNameInput.error = "Group name must be at least 3 characters"
+            return
+        }
+
+        if (newDescription.length < 10) {
+            groupDescriptionInput.error = "Description must be at least 10 characters"
+            return
+        }
+
+        currentGroup?.let { group ->
+            if (group.adminId != currentUserId) {
+                showToast("Only admin can modify group details")
+                return
+            }
+
+            val updatedGroup = group.copy(
+                name = newName,
+                description = newDescription,
+                lastActivity = System.currentTimeMillis()
+            )
+
+            groupId?.let { gId ->
+                db.collection("groups").document(gId)
+                    .set(updatedGroup)
+                    .addOnSuccessListener {
+                        if (isFinishing || isDestroyed) return@addOnSuccessListener
+                        showToast("Group updated successfully")
+                    }
+                    .addOnFailureListener { e ->
+                        if (isFinishing || isDestroyed) return@addOnFailureListener
+                        showToast("Error updating group: ${e.message}")
+                    }
+            }
+        }
+    }
+
+    private fun showToast(message: String) {
+        if (!isFinishing && !isDestroyed) {
+            Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        groupListener?.remove()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (!isFinishing && !isDestroyed) {
+            fetchGroupInformation()
+        }
+    }
+
 
     private fun initializeViews() {
         // Initialize views
@@ -92,28 +210,6 @@ class GroupInfoActivity : AppCompatActivity() {
         }
     }
 
-    private fun fetchGroupInformation() {
-        groupId?.let { gId ->
-            db.collection("groups").document(gId)
-                .get()
-                .addOnSuccessListener { document ->
-                    document.toObject(Group::class.java)?.let { group ->
-                        currentGroup = group
-                        updateUI(group)
-                        setupMembersRecyclerView(group)
-                        fetchMembers(group.members)
-
-                        // Update UI based on admin status
-                        val isAdmin = group.adminId == currentUserId
-                        updateAdminControls(isAdmin)
-                    }
-                }
-                .addOnFailureListener { e ->
-                    Toast.makeText(this, "Error fetching group info: ${e.message}",
-                        Toast.LENGTH_SHORT).show()
-                }
-        }
-    }
 
     private fun updateUI(group: Group) {
         groupNameInput.setText(group.name)
@@ -157,26 +253,6 @@ class GroupInfoActivity : AppCompatActivity() {
         saveGroupFab.isVisible = isAdmin
     }
 
-    private fun fetchMembers(memberIds: List<String>) {
-        if (memberIds.isEmpty()) {
-            membersAdapter.updateMembers(emptyList())
-            return
-        }
-
-        db.collection("users")
-            .whereIn("userId", memberIds)
-            .get()
-            .addOnSuccessListener { documents ->
-                val members = documents.mapNotNull { doc ->
-                    doc.toObject(User::class.java)
-                }
-                membersAdapter.updateMembers(members)
-            }
-            .addOnFailureListener { e ->
-                Toast.makeText(this, "Error fetching members: ${e.message}",
-                    Toast.LENGTH_SHORT).show()
-            }
-    }
 
     private fun startAddMemberActivity() {
         groupId?.let { gId ->
@@ -184,50 +260,6 @@ class GroupInfoActivity : AppCompatActivity() {
                 putExtra("groupId", gId)
             }
             startActivity(intent)
-        }
-    }
-
-    private fun saveGroupChanges() {
-        val newName = groupNameInput.text.toString().trim()
-        val newDescription = groupDescriptionInput.text.toString().trim()
-
-        // Validate inputs
-        if (newName.length < 3) {
-            groupNameInput.error = "Group name must be at least 3 characters"
-            return
-        }
-
-        if (newDescription.length < 10) {
-            groupDescriptionInput.error = "Description must be at least 10 characters"
-            return
-        }
-
-        currentGroup?.let { group ->
-            // Only allow admin to make changes
-            if (group.adminId != currentUserId) {
-                Toast.makeText(this, "Only admin can modify group details",
-                    Toast.LENGTH_SHORT).show()
-                return
-            }
-
-            val updatedGroup = group.copy(
-                name = newName,
-                description = newDescription,
-                lastActivity = System.currentTimeMillis()
-            )
-
-            groupId?.let { gId ->
-                db.collection("groups").document(gId)
-                    .set(updatedGroup)
-                    .addOnSuccessListener {
-                        Toast.makeText(this, "Group updated successfully",
-                            Toast.LENGTH_SHORT).show()
-                    }
-                    .addOnFailureListener { e ->
-                        Toast.makeText(this, "Error updating group: ${e.message}",
-                            Toast.LENGTH_SHORT).show()
-                    }
-            }
         }
     }
 
@@ -275,9 +307,4 @@ class GroupInfoActivity : AppCompatActivity() {
         }
     }
 
-    override fun onResume() {
-        super.onResume()
-        // Refresh group information when returning to the activity
-        fetchGroupInformation()
-    }
 }
