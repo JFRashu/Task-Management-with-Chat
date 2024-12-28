@@ -18,7 +18,7 @@ class TaskInfoActivity : AppCompatActivity() {
     private lateinit var statusChip: Chip
     private lateinit var statusToggleGroup: MaterialButtonToggleGroup
     private lateinit var descriptionText: TextView
-    private lateinit var lastMessageText: TextView
+//    private lateinit var lastMessageText: TextView
     private lateinit var createdByText: TextView
     private lateinit var createdAtText: TextView
     private lateinit var lastActivityText: TextView
@@ -52,7 +52,7 @@ class TaskInfoActivity : AppCompatActivity() {
         statusChip = findViewById(R.id.statusChip)
         statusToggleGroup = findViewById(R.id.statusToggleGroup)
         descriptionText = findViewById(R.id.descriptionText)
-        lastMessageText = findViewById(R.id.lastMessageText)
+//        lastMessageText = findViewById(R.id.lastMessageText)
         createdByText = findViewById(R.id.createdByText)
         createdAtText = findViewById(R.id.createdAtText)
         lastActivityText = findViewById(R.id.lastActivityText)
@@ -122,7 +122,7 @@ class TaskInfoActivity : AppCompatActivity() {
     private fun updateUI(task: Task) {
         taskTitleText.text = task.title
         descriptionText.text = task.description
-        lastMessageText.text = "Last message: ${if (task.lastMessage.isNotEmpty()) task.lastMessage else "No messages yet"}"
+//        lastMessageText.text = "Last message: ${if (task.lastMessage.isNotEmpty()) task.lastMessage else "No messages yet"}"
         createdByText.text = "Created by: ${task.createdBy}" // This will be updated when user info is fetched
         createdAtText.text = "Created: ${DateUtils.getRelativeTimeSpanString(task.createdAt)}"
         lastActivityText.text = "Last activity: ${DateUtils.getRelativeTimeSpanString(task.lastActivity)}"

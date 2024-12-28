@@ -61,22 +61,22 @@
             app:layout_constraintTop_toBottomOf="@id/taskTitle"
             tools:text="Task description goes here"/>
 
-        <TextView
-            android:id="@+id/lastMessage"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:textSize="14sp"
-            android:maxLines="1"
-            android:ellipsize="end"
-            android:textStyle="italic"
+<!--        <TextView-->
+<!--            android:id="@+id/lastMessage"-->
+<!--            android:layout_width="0dp"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:layout_marginTop="8dp"-->
+<!--            android:textSize="14sp"-->
+<!--            android:maxLines="1"-->
+<!--            android:ellipsize="end"-->
+<!--            android:textStyle="italic"-->
 
-            android:drawableStart="@drawable/baseline_email_24"
-            android:drawablePadding="8dp"
-            app:layout_constraintStart_toStartOf="@id/taskTitle"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/taskDescription"
-            tools:text="Last message in the task"/>
+<!--            android:drawableStart="@drawable/baseline_email_24"-->
+<!--            android:drawablePadding="8dp"-->
+<!--            app:layout_constraintStart_toStartOf="@id/taskTitle"-->
+<!--            app:layout_constraintEnd_toEndOf="parent"-->
+<!--            app:layout_constraintTop_toBottomOf="@id/taskDescription"-->
+<!--            tools:text="Last message in the task"/>-->
 
         <TextView
             android:id="@+id/lastActivityLabel"
@@ -87,7 +87,7 @@
             android:textSize="12sp"
             android:textStyle="italic"
             app:layout_constraintStart_toStartOf="@id/taskTitle"
-            app:layout_constraintTop_toBottomOf="@id/lastMessage"/>
+            app:layout_constraintTop_toBottomOf="@id/taskDescription"/>
 
         <TextView
             android:id="@+id/lastActivityTime"

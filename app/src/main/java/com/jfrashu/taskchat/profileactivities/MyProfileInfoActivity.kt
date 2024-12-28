@@ -1,6 +1,9 @@
 package com.jfrashu.taskchat.profileactivities
 
+import android.content.Context
 import android.content.Intent
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import android.os.Bundle
 import android.widget.TextView
 import android.widget.Toast
@@ -17,6 +20,7 @@ import com.jfrashu.taskchat.dataclasses.User
 import com.jfrashu.taskchat.WelcomeActivity
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.firebase.auth.EmailAuthProvider
+import com.google.firebase.auth.FirebaseAuthInvalidUserException
 
 class MyProfileInfoActivity : AppCompatActivity() {
     private lateinit var displayNameInput: TextInputEditText
@@ -29,6 +33,9 @@ class MyProfileInfoActivity : AppCompatActivity() {
 
     private lateinit var changePasswordButton: MaterialButton
 
+
+    private lateinit var forgotPasswordButton: MaterialButton
+    private var isActivityActive = true
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -46,6 +53,11 @@ class MyProfileInfoActivity : AppCompatActivity() {
         }
     }
 
+    override fun onDestroy() {
+        super.onDestroy()
+        isActivityActive = false
+    }
+
     private fun initializeViews() {
         displayNameInput = findViewById(R.id.displayNameInput)
         emailInput = findViewById(R.id.emailInput)
@@ -53,18 +65,75 @@ class MyProfileInfoActivity : AppCompatActivity() {
         lastActiveText = findViewById(R.id.lastActiveText)
         saveFab = findViewById(R.id.saveFab)
         logoutButton = findViewById(R.id.logoutButton)
+        forgotPasswordButton = findViewById(R.id.forgotPasswordButton)
         changePasswordButton = findViewById(R.id.changePasswordButton)
     }
     private fun setupPasswordButtons() {
-        if (isFinishing || isDestroyed) return
+        if (!isActivityActive) return
 
         changePasswordButton.setOnClickListener {
-            showChangePasswordDialog()
+            if (isActivityActive) showChangePasswordDialog()
+        }
+
+        forgotPasswordButton.setOnClickListener {
+            if (isActivityActive) showForgotPasswordDialog()
         }
     }
 
+    private fun showForgotPasswordDialog() {
+        if (!isActivityActive) return
+
+        val email = emailInput.text.toString().trim()
+
+        if (email.isEmpty()) {
+            showToast("Please enter your email address")
+            return
+        }
+
+        MaterialAlertDialogBuilder(this)
+            .setTitle("Reset Password")
+            .setMessage("Send password reset email to: $email?")
+            .setPositiveButton("Send") { _, _ ->
+                if (isActivityActive) sendPasswordResetEmail(email)
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    private fun sendPasswordResetEmail(email: String) {
+        if (!isActivityActive) return
+
+        if (!isNetworkAvailable()) {
+            showToast("No internet connection available")
+            return
+        }
+
+        auth.sendPasswordResetEmail(email)
+            .addOnCompleteListener { task ->
+                if (!isActivityActive) return@addOnCompleteListener
+
+                if (task.isSuccessful) {
+                    showToast("Password reset email sent to $email")
+                    // Log user out for security
+                    updateUserStatus("offline")
+                    auth.signOut()
+                    clearUserSession()
+                    navigateToWelcome()
+                } else {
+                    when (task.exception) {
+                        is FirebaseAuthInvalidUserException -> {
+                            showToast("No user found with this email address")
+                        }
+                        else -> {
+                            showToast("Failed to send reset email: ${task.exception?.message}")
+                        }
+                    }
+                }
+            }
+    }
+
     private fun showChangePasswordDialog() {
-        if (isFinishing || isDestroyed) return
+        if (!isActivityActive) return
 
         val dialogView = layoutInflater.inflate(R.layout.dialog_change_password, null)
         val currentPasswordInput = dialogView.findViewById<TextInputEditText>(R.id.currentPasswordInput)
@@ -75,12 +144,14 @@ class MyProfileInfoActivity : AppCompatActivity() {
             .setTitle("Change Password")
             .setView(dialogView)
             .setPositiveButton("Change") { dialog, _ ->
-                val currentPassword = currentPasswordInput.text.toString()
-                val newPassword = newPasswordInput.text.toString()
-                val confirmPassword = confirmPasswordInput.text.toString()
+                if (isActivityActive) {
+                    val currentPassword = currentPasswordInput.text.toString()
+                    val newPassword = newPasswordInput.text.toString()
+                    val confirmPassword = confirmPasswordInput.text.toString()
 
-                if (validatePasswordInputs(newPassword, confirmPassword)) {
-                    changePassword(currentPassword, newPassword)
+                    if (validatePasswordInputs(newPassword, confirmPassword)) {
+                        changePassword(currentPassword, newPassword)
+                    }
                 }
                 dialog.dismiss()
             }
@@ -89,6 +160,8 @@ class MyProfileInfoActivity : AppCompatActivity() {
     }
 
     private fun validatePasswordInputs(newPassword: String, confirmPassword: String): Boolean {
+        if (!isActivityActive) return false
+
         if (newPassword.length < 6) {
             showToast("Password must be at least 6 characters")
             return false
@@ -103,7 +176,12 @@ class MyProfileInfoActivity : AppCompatActivity() {
     }
 
     private fun changePassword(currentPassword: String, newPassword: String) {
-        if (isFinishing || isDestroyed) return
+        if (!isActivityActive) return
+
+        if (!isNetworkAvailable()) {
+            showToast("No internet connection available")
+            return
+        }
 
         val user = auth.currentUser
         val email = user?.email
@@ -113,17 +191,15 @@ class MyProfileInfoActivity : AppCompatActivity() {
             return
         }
 
-        // First, reauthenticate the user
         val credential = EmailAuthProvider.getCredential(email, currentPassword)
 
         user.reauthenticate(credential)
             .addOnSuccessListener {
-                if (isFinishing || isDestroyed) return@addOnSuccessListener
+                if (!isActivityActive) return@addOnSuccessListener
 
-                // Then change the password
                 user.updatePassword(newPassword)
                     .addOnSuccessListener {
-                        if (isFinishing || isDestroyed) return@addOnSuccessListener
+                        if (!isActivityActive) return@addOnSuccessListener
                         showToast("Password updated successfully")
 
                         // Log user out for security
@@ -133,36 +209,26 @@ class MyProfileInfoActivity : AppCompatActivity() {
                         navigateToWelcome()
                     }
                     .addOnFailureListener { e ->
-                        if (isFinishing || isDestroyed) return@addOnFailureListener
+                        if (!isActivityActive) return@addOnFailureListener
                         showToast("Failed to update password: ${e.message}")
                     }
             }
             .addOnFailureListener { e ->
-                if (isFinishing || isDestroyed) return@addOnFailureListener
+                if (!isActivityActive) return@addOnFailureListener
                 showToast("Current password is incorrect")
             }
     }
 
-    private fun resetPassword() {
-        if (isFinishing || isDestroyed) return
-
-        val email = emailInput.text.toString()
-
-        if (email.isEmpty()) {
-            showToast("Please enter your email")
-            return
-        }
-
-        auth.sendPasswordResetEmail(email)
-            .addOnSuccessListener {
-                if (isFinishing || isDestroyed) return@addOnSuccessListener
-                showToast("Password reset email sent")
-            }
-            .addOnFailureListener { e ->
-                if (isFinishing || isDestroyed) return@addOnFailureListener
-                showToast("Failed to send reset email: ${e.message}")
-            }
+    private fun isNetworkAvailable(): Boolean {
+        val connectivityManager = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        val network = connectivityManager.activeNetwork
+        val capabilities = connectivityManager.getNetworkCapabilities(network)
+        return capabilities != null &&
+                (capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) ||
+                        capabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR))
     }
+
+
 
     private fun showToast(message: String) {
         if (!isFinishing && !isDestroyed) {

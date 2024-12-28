@@ -123,14 +123,7 @@
                         android:layout_marginTop="8dp"
                         android:textAppearance="?attr/textAppearanceBodyLarge" />
 
-                    <TextView
-                        android:id="@+id/lastMessageText"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="16dp"
-                        android:textAppearance="?attr/textAppearanceBodyMedium"
-                        android:textStyle="italic"
-                        tools:text="Last message: Update on progress..." />
+
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 

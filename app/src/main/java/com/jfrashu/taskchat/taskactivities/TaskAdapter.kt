@@ -22,7 +22,7 @@ class TaskAdapter(
         val taskTitle: TextView = view.findViewById(R.id.taskTitle)
         val taskDescription: TextView = view.findViewById(R.id.taskDescription)
         val taskStatus: Chip = view.findViewById(R.id.taskStatus)
-        val lastMessage: TextView = view.findViewById(R.id.lastMessage)
+//        val lastMessage: TextView = view.findViewById(R.id.lastMessage)
         val lastActivityTime: TextView = view.findViewById(R.id.lastActivityTime)
     }
 
@@ -57,11 +57,11 @@ class TaskAdapter(
         )
 
         // Format last message
-        holder.lastMessage.text = if (task.lastMessage.isNotEmpty()) {
-            task.lastMessage
-        } else {
-            "No messages yet"
-        }
+//        holder.lastMessage.text = if (task.lastMessage.isNotEmpty()) {
+//            task.lastMessage
+//        } else {
+//            "No messages yet"
+//        }
 
         // Format last activity time
         val dateFormat = SimpleDateFormat("MMM d, yyyy HH:mm", Locale.getDefault())
