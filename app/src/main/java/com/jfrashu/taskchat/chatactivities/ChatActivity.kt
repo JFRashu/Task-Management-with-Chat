@@ -51,6 +51,10 @@ class ChatActivity : AppCompatActivity() {
         private const val MESSAGES_PER_PAGE = 50
     }
 
+    private var lastLoadedMessageTimestamp: Long? = null
+    private var isLoadingMore = false
+    private var allMessagesLoaded = false
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityChatBinding.inflate(layoutInflater)
@@ -68,6 +72,156 @@ class ChatActivity : AppCompatActivity() {
         setupUI()
         setupBackButton()
         checkTaskAccess()
+    }
+
+    private fun setupMessageListener() {
+        if (isFinishing || isDestroyed) return
+
+        // Initial query to get the most recent messages
+        val initialQuery = db.collection("groups")
+            .document(groupId)
+            .collection("tasks")
+            .document(taskId)
+            .collection("chats")
+            .orderBy("timestamp", Query.Direction.DESCENDING)
+            .limit(MESSAGES_PER_PAGE.toLong())
+
+        initialQuery.get().addOnSuccessListener { snapshot ->
+            if (isFinishing || isDestroyed) return@addOnSuccessListener
+
+            if (!snapshot.isEmpty) {
+                lastLoadedMessageTimestamp = snapshot.documents.last().getLong("timestamp")
+            }
+
+            // Set up real-time listener for new messages
+            setupRealtimeUpdates()
+
+        }.addOnFailureListener { e ->
+            if (isFinishing || isDestroyed) return@addOnFailureListener
+            Log.e("ChatActivity", "Error loading initial messages", e)
+            showToast("Error loading messages: ${e.message}")
+        }
+    }
+
+    private fun setupRealtimeUpdates() {
+        if (isFinishing || isDestroyed) return
+
+        val realtimeQuery = db.collection("groups")
+            .document(groupId)
+            .collection("tasks")
+            .document(taskId)
+            .collection("chats")
+            .orderBy("timestamp", Query.Direction.ASCENDING)
+            .apply {
+                lastLoadedMessageTimestamp?.let {
+                    startAfter(it)
+                }
+            }
+
+        snapshotListener = realtimeQuery.addSnapshotListener { snapshot, error ->
+            if (isFinishing || isDestroyed) return@addSnapshotListener
+
+            if (error != null) {
+                Log.e("ChatActivity", "Listen failed: ${error.message}", error)
+                showToast("Error loading messages: ${error.message}")
+                return@addSnapshotListener
+            }
+
+            snapshot?.let { querySnapshot ->
+                val newMessages = querySnapshot.documents.mapNotNull { doc ->
+                    doc.toObject(Chat::class.java)
+                }
+
+                updateMessageList(newMessages)
+            }
+        }
+
+        // Setup scroll listener for pagination
+        recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                super.onScrolled(recyclerView, dx, dy)
+
+                if (isLoadingMore || allMessagesLoaded) return
+
+                val layoutManager = recyclerView.layoutManager as LinearLayoutManager
+                val firstVisibleItem = layoutManager.findFirstVisibleItemPosition()
+
+                if (firstVisibleItem <= 5) {
+                    loadMoreMessages()
+                }
+            }
+        })
+    }
+
+    private fun loadMoreMessages() {
+        if (isLoadingMore || allMessagesLoaded || lastLoadedMessageTimestamp == null) return
+        isLoadingMore = true
+
+        val oldMessagesQuery = db.collection("groups")
+            .document(groupId)
+            .collection("tasks")
+            .document(taskId)
+            .collection("chats")
+            .orderBy("timestamp", Query.Direction.DESCENDING)
+            .whereLessThan("timestamp", lastLoadedMessageTimestamp!!)
+            .limit(MESSAGES_PER_PAGE.toLong())
+
+        oldMessagesQuery.get().addOnSuccessListener { snapshot ->
+            if (isFinishing || isDestroyed) return@addOnSuccessListener
+
+            if (snapshot.isEmpty) {
+                allMessagesLoaded = true
+            } else {
+                val oldMessages = snapshot.documents.mapNotNull { doc ->
+                    doc.toObject(Chat::class.java)
+                }
+
+                lastLoadedMessageTimestamp = snapshot.documents.last().getLong("timestamp")
+                updateMessageList(oldMessages, prepend = true)
+            }
+            isLoadingMore = false
+
+        }.addOnFailureListener { e ->
+            if (isFinishing || isDestroyed) return@addOnFailureListener
+            Log.e("ChatActivity", "Error loading more messages", e)
+            isLoadingMore = false
+        }
+    }
+
+    private fun updateMessageList(newMessages: List<Chat>, prepend: Boolean = false) {
+        val currentList = adapter.currentList.toMutableList()
+
+        if (prepend) {
+            // Remove duplicates and add new messages at the beginning
+            val uniqueMessages = newMessages.filterNot { new ->
+                currentList.any { existing -> existing.messageId == new.messageId }
+            }
+            currentList.addAll(0, uniqueMessages)
+        } else {
+            // Remove duplicates and add new messages at the end
+            val uniqueMessages = newMessages.filterNot { new ->
+                currentList.any { existing -> existing.messageId == new.messageId }
+            }
+            currentList.addAll(uniqueMessages)
+        }
+
+        // Sort messages by timestamp
+        val sortedList = currentList.sortedBy { it.timestamp }
+
+        adapter.submitList(sortedList) {
+            if (!prepend && sortedList.isNotEmpty()) {
+                val layoutManager = recyclerView.layoutManager as LinearLayoutManager
+                val lastVisibleItem = layoutManager.findLastVisibleItemPosition()
+                val totalItems = layoutManager.itemCount
+                val isNearBottom = totalItems - lastVisibleItem <= 3
+
+                if (isNearBottom) {
+                    recyclerView.post {
+                        recyclerView.smoothScrollToPosition(sortedList.size - 1)
+                    }
+                }
+            }
+        }
     }
 
     private fun setupUI() {
@@ -98,55 +252,7 @@ class ChatActivity : AppCompatActivity() {
         binding.sendButton.setOnClickListener { sendMessage() }
     }
 
-    private fun setupMessageListener() {
-        val chatsRef = db.collection("groups")
-            .document(groupId)
-            .collection("tasks")
-            .document(taskId)
-            .collection("chats")
-            .orderBy("timestamp", Query.Direction.ASCENDING)
 
-        snapshotListener = chatsRef.addSnapshotListener(this) { snapshot, error ->
-            if (error != null) {
-                Log.e("ChatActivity", "Listen failed: ${error.message}", error)
-                showToast("Error loading messages: ${error.message}")
-                return@addSnapshotListener
-            }
-
-            snapshot?.let { querySnapshot ->
-                val newMessages = querySnapshot.documents.mapNotNull { doc ->
-                    doc.toObject(Chat::class.java)
-                }
-
-                adapter.submitList(newMessages) {
-                    if (newMessages.isNotEmpty()) {
-                        val layoutManager = recyclerView.layoutManager as LinearLayoutManager
-                        val lastVisibleItem = layoutManager.findLastVisibleItemPosition()
-                        val totalItems = layoutManager.itemCount
-                        val isNearBottom = totalItems - lastVisibleItem <= 3
-
-                        if (isNearBottom) {
-                            recyclerView.post {
-                                recyclerView.smoothScrollToPosition(newMessages.size - 1)
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
-            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
-                super.onScrolled(recyclerView, dx, dy)
-                val layoutManager = recyclerView.layoutManager as LinearLayoutManager
-                val firstVisibleItem = layoutManager.findFirstVisibleItemPosition()
-
-                if (firstVisibleItem == 0) {
-                    loadMoreMessages(chatsRef)
-                }
-            }
-        })
-    }
 
     private fun loadMoreMessages(query: Query) {
         query.limit(MESSAGES_PER_PAGE.toLong()).get()
