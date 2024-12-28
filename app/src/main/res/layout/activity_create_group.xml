@@ -13,6 +13,7 @@
         android:layout_height="?attr/actionBarSize"
         app:layout_constraintTop_toTopOf="parent"
         app:navigationIcon="@drawable/baseline_close_24"
+        app:titleTextColor="#22242E"
         app:title="Create New Group" />
 
     <ScrollView

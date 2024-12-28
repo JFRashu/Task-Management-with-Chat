@@ -16,6 +16,8 @@
         <com.google.android.material.appbar.MaterialToolbar
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
+            android:textColor="#06135F"
+            app:titleTextColor="#22242E"
             android:layout_height="?attr/actionBarSize"
             app:navigationIcon="@drawable/baseline_arrow_back_24"
             app:title="Task Details" />

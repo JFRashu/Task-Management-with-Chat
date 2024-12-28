@@ -17,6 +17,7 @@
             android:layout_width="match_parent"
             android:layout_height="180dp"
             android:fitsSystemWindows="true"
+
             app:collapsedTitleTextAppearance="@style/TextAppearance.Material3.TitleLarge"
             app:expandedTitleTextAppearance="@style/TextAppearance.Material3.HeadlineLarge"
             app:layout_scrollFlags="scroll|exitUntilCollapsed|snap">
@@ -27,6 +28,7 @@
                 android:layout_height="?attr/actionBarSize"
                 app:layout_collapseMode="pin"
                 android:textColor="#011062"
+                app:titleTextColor="#22242E"
                 app:navigationIcon="@drawable/baseline_arrow_back_24"
                 app:title="Profile" />
 

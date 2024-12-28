@@ -12,6 +12,7 @@
         android:layout_height="?attr/actionBarSize"
         app:layout_constraintTop_toTopOf="parent"
         android:textColor="#0E1854"
+        app:titleTextColor="#22242E"
         app:navigationIcon="@drawable/baseline_close_24"
         app:title="Create New Task" />
 
