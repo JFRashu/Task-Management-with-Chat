@@ -161,12 +161,12 @@ class LoginActivity : AppCompatActivity() {
     private fun handleSignInError(exception: Exception?) {
         when (exception) {
             is FirebaseAuthInvalidUserException -> {
-                showToast("No user found with this email address")
-                binding.emailField.error = "User not found"
+                showToast("Check email and password properly")
+
             }
             is FirebaseAuthInvalidCredentialsException -> {
-                showToast("Incorrect password")
-                binding.passwordField.error = "Incorrect password"
+                showToast("Check email and password properly")
+
             }
             else -> {
                 showToast("Authentication failed: ${exception?.message}")

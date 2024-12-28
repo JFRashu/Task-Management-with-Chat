@@ -90,7 +90,7 @@
         android:layout_height="0dp"
         android:text="Log In"
         android:textAlignment="center"
-        android:textColor="@color/md_theme_onPrimaryFixedVariant"
+        android:textColor="#061462"
         android:padding="5dp"
         android:textSize="30sp"
         android:textStyle="italic"
