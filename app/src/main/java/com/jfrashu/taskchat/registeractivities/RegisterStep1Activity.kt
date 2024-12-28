@@ -72,11 +72,53 @@ class RegisterStep1Activity : AppCompatActivity() {
             val password = passwordField.text.toString()
             val rePassword = repasswordField.text.toString()
 
-            val isValid = name.isNotEmpty() &&
-                    email.isNotEmpty() && android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches() &&
-                    contact.isNotEmpty() && contact.length >= 10 &&
-                    password.isNotEmpty() && password.length >= 6 &&
-                    rePassword.isNotEmpty() && password == rePassword
+            var isValid = true
+            if (name.isEmpty()) {
+                namefield.error = "Name is required"
+                isValid = false
+            } else {
+                namefield.error = null
+            }
+
+            if (email.isEmpty()) {
+                emailField.error = "Email is required"
+                isValid = false
+            } else if (!android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+                emailField.error = "Invalid email format"
+                isValid = false
+            } else {
+                emailField.error = null
+            }
+
+            if (contact.isEmpty()) {
+                contactField.error = "Contact number is required"
+                isValid = false
+            } else if (contact.length < 10) {
+                contactField.error = "Contact number should be at least 10 digits"
+                isValid = false
+            } else {
+                contactField.error = null
+            }
+
+            if (password.isEmpty()) {
+                passwordField.error = "Password is required"
+                isValid = false
+            } else if (password.length < 8) {
+                passwordField.error = "Password must be at least 8 characters"
+                isValid = false
+            } else {
+                passwordField.error = null
+            }
+
+            if (rePassword.isEmpty()) {
+                repasswordField.error = "Please confirm your password"
+                isValid = false
+            } else if (password != rePassword) {
+                repasswordField.error = "Passwords do not match"
+                isValid = false
+            } else {
+                repasswordField.error = null
+            }
 
             signinbtn.isEnabled = isValid && !verificationInProgress
             return isValid
@@ -103,7 +145,7 @@ class RegisterStep1Activity : AppCompatActivity() {
                                 verificationInProgress = false
                                 binding.signinbtn.text = "Next"
                                 binding.signinbtn.isEnabled = true
-                                showToast("Failed to send verification email")
+                                showToast("Failed to send verification email: ${verificationTask.exception?.message}")
                             }
                         }
                 } else {
@@ -142,14 +184,13 @@ class RegisterStep1Activity : AppCompatActivity() {
             if (reloadTask.isSuccessful) {
                 val reloadedUser = auth.currentUser
                 if (reloadedUser?.isEmailVerified == true) {
-                    // Email is verified, create user account
                     saveUserToFirestore(reloadedUser)
                 } else {
                     showToast("Email not verified yet")
                     showVerificationDialog(firebaseUser)
                 }
             } else {
-                showToast("Failed to check verification status")
+                showToast("Failed to check verification status: ${reloadTask.exception?.message}")
                 showVerificationDialog(firebaseUser)
             }
         }
@@ -169,7 +210,6 @@ class RegisterStep1Activity : AppCompatActivity() {
             .set(user)
             .addOnSuccessListener {
                 showToast("Account created successfully!")
-                // Proceed to Welcome Activity
                 startActivity(Intent(this, WelcomeActivity::class.java))
                 finish()
             }
