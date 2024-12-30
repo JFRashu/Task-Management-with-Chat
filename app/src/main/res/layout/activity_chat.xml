@@ -5,6 +5,7 @@
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@drawable/chat_background_3"
     tools:context=".chatactivities.ChatActivity">
 
     <!--    guidelines Vertical-->
@@ -119,7 +120,7 @@
             app:layout_constraintBottom_toBottomOf="@id/messageInput"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="@id/messageInput"
-            app:tint="@color/in_progress_status" />
+            app:tint="#C7E6F4" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>
