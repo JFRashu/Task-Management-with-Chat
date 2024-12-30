@@ -27,6 +27,7 @@ SAT.R a TaskChatting App serves as a practical implementation of modern Android 
 <img src="Screentshots/GroupInformation.jpg" width="300" height="600" alt="Group Information"/>
 <img src="Screentshots/GroupInvitation.jpg" width="300" height="600" alt="Group Invitation"/>
 <img src="Screentshots/CreateGroup.jpg" width="300" height="600" alt="Create New Group"/>
+<img src="Screentshots/AddMember.jpg" width="300" height="600" alt="Add new member to exiting Group"/>
 </p>
 
 ### Task Management & Communication
@@ -127,8 +128,8 @@ This project demonstrates implementation of:
 Special thanks to:
 - Sourav Palit (Principal App Engineer, GetOnNet) - Course Mentor
 - Hasan Murad (Assistant Professor of CSE, CUET) - Course Mentor
-- Md Tasnimur Rahman (2004091)- Testing and Feedback
-- Shougata Paul(2004087)- Testing and Feedback
+- Md Tasnimur Rahman (2004091) - Testing and Feedback
+- Shougata Paul (2004087) - Testing and Feedback
 
 ## Future Enhancements
 - Dark mode/Light mode theme configuration
