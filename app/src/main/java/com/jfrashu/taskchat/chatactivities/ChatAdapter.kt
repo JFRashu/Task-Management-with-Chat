@@ -1,6 +1,7 @@
 package com.jfrashu.taskchat.chatactivities
 
 import android.graphics.Color
+import android.graphics.Typeface
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -8,6 +9,7 @@ import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
+import android.content.res.ColorStateList
 import com.google.firebase.firestore.FirebaseFirestore
 import com.jfrashu.taskchat.R
 import com.jfrashu.taskchat.databinding.ItemChatBinding
@@ -112,27 +114,27 @@ class ChatAdapter(
             binding.apply {
                 // Apply deleted message style if needed
                 if (chat.isDeleted) {
-                    senderMessageText.text = "This message was deleted"
-                    senderMessageText.setTextColor(Color.GRAY)
-                    leftMessageContainer.alpha = 0.6f
-                    leftMessageContainer.setBackgroundResource(R.drawable.sender_deleted_message_background)
+                    senderMessageText.apply {
+                        text = "❌ Message Deleted" // Clear text with emoji
+                        setTextColor(Color.parseColor("#6C6C6C")) // Direct hex color for gray
+                        setTypeface(null, Typeface.ITALIC)
+                        visibility = View.VISIBLE
+                    }
+                    leftMessageContainer.apply {
+                        setBackgroundColor(Color.parseColor("#E6E6E6")) // Light gray background
+                        alpha = 1.0f // Full visibility
+                    }
                 } else {
-                    senderMessageText.setTextColor(ContextCompat.getColor(itemView.context,
-                        R.color.md_theme_onBackground_mediumContrast))
-                    leftMessageContainer.alpha = 1.0f
-                    leftMessageContainer.setBackgroundResource(R.drawable.sender_message_background)
-
-                    when (chat.type) {
-                        "text" -> {
-                            senderMessageText.text = chat.content
-                            senderMessageText.visibility = View.VISIBLE
-                        }
-                        "image" -> {
-                            senderMessageText.text = "[Image]"
-                        }
-                        "file" -> {
-                            senderMessageText.text = "[File Attachment]"
-                        }
+                    // Normal message styling
+                    senderMessageText.apply {
+                        text = chat.content
+//                        setTextColor(Color.parseColor("#000000")) // Black color for normal messages
+//                        setTypeface(null, Typeface.NORMAL)
+                        visibility = View.VISIBLE
+                    }
+                    leftMessageContainer.apply {
+                        setBackgroundResource(R.drawable.sender_message_background)
+                        alpha = 1.0f
                     }
                 }
                 senderTimestamp.text = dateFormatter.format(Date(chat.timestamp))
@@ -143,30 +145,110 @@ class ChatAdapter(
             binding.apply {
                 // Apply deleted message style if needed
                 if (chat.isDeleted) {
-                    receiverMessageText.text = "This message was deleted"
-                    receiverMessageText.setTextColor(Color.GRAY)
-                    rightMessageContainer.alpha = 0.6f
-                    rightMessageContainer.setBackgroundResource(R.drawable.receiver_deleted_message_background)
+                    receiverMessageText.apply {
+                        text = "❌ Message Deleted" // Clear text with emoji
+                        setTextColor(Color.parseColor("#6C6C6C")) // Direct hex color for gray
+                        setTypeface(null, Typeface.ITALIC)
+                        visibility = View.VISIBLE
+                    }
+                    rightMessageContainer.apply {
+                        setBackgroundColor(Color.parseColor("#E6E6E6")) // Light gray background
+                        alpha = 1.0f // Full visibility
+                    }
                 } else {
-                    receiverMessageText.setTextColor(ContextCompat.getColor(itemView.context,
-                        R.color.md_theme_onBackground_mediumContrast))
-                    rightMessageContainer.alpha = 1.0f
-                    rightMessageContainer.setBackgroundResource(R.drawable.receiver_message_background)
-
-                    when (chat.type) {
-                        "text" -> {
-                            receiverMessageText.text = chat.content
-                            receiverMessageText.visibility = View.VISIBLE
-                        }
-                        "image" -> {
-                            receiverMessageText.text = "[Image]"
-                        }
-                        "file" -> {
-                            receiverMessageText.text = "[File Attachment]"
-                        }
+                    // Normal message styling
+                    receiverMessageText.apply {
+                        text = chat.content
+//                        setTextColor(Color.parseColor("#000000")) // Black color for normal messages
+//                        setTypeface(null, Typeface.NORMAL)
+                        visibility = View.VISIBLE
+                    }
+                    rightMessageContainer.apply {
+                        setBackgroundResource(R.drawable.receiver_message_background)
+                        alpha = 1.0f
                     }
                 }
                 receiverTimestamp.text = dateFormatter.format(Date(chat.timestamp))
+            }
+        }
+
+        private fun ItemChatBinding.applyReceiverDeletedMessageStyle() {
+            receiverMessageText.apply {
+                text = " Message was deleted"
+                setTextColor(Color.parseColor("#808080")) // Gray color
+                setTypeface(null, Typeface.ITALIC)
+                textSize = 14f // Optional: set smaller text size for deleted messages
+            }
+            rightMessageContainer.apply {
+                alpha = 0.8f
+                setBackgroundResource(R.drawable.receiver_deleted_message_background) // Use same background
+                backgroundTintList = ColorStateList.valueOf(Color.parseColor("#E0E0E0")) // Light gray tint
+            }
+        }
+
+        private fun ItemChatBinding.applySenderDeletedMessageStyle() {
+            senderMessageText.apply {
+                text = " Message was deleted"
+                setTextColor(Color.parseColor("#808080")) // Gray color
+                setTypeface(null, Typeface.ITALIC)
+                textSize = 14f // Optional: set smaller text size for deleted messages
+            }
+            leftMessageContainer.apply {
+                alpha = 0.8f
+                setBackgroundResource(R.drawable.receiver_deleted_message_background) // Use same background
+                backgroundTintList = ColorStateList.valueOf(Color.parseColor("#E0E0E0")) // Light gray tint
+            }
+        }
+
+        private fun ItemChatBinding.applySenderNormalMessageStyle(chat: Chat) {
+            senderMessageText.apply {
+                setTextColor(ContextCompat.getColor(itemView.context,
+                    R.color.md_theme_onBackground_mediumContrast))
+                setTypeface(null, Typeface.NORMAL)
+            }
+            leftMessageContainer.apply {
+                alpha = 1.0f
+                setBackgroundResource(R.drawable.sender_message_background)
+            }
+
+            when (chat.type) {
+                "text" -> {
+                    senderMessageText.text = chat.content
+                    senderMessageText.visibility = View.VISIBLE
+                }
+                "image" -> {
+                    senderMessageText.text = "📷 Image"
+                }
+                "file" -> {
+                    senderMessageText.text = "📎 File Attachment"
+                }
+            }
+        }
+
+
+
+        private fun ItemChatBinding.applyReceiverNormalMessageStyle(chat: Chat) {
+            receiverMessageText.apply {
+                setTextColor(ContextCompat.getColor(itemView.context,
+                    R.color.md_theme_onBackground_mediumContrast))
+                setTypeface(null, Typeface.NORMAL)
+            }
+            rightMessageContainer.apply {
+                alpha = 1.0f
+                setBackgroundResource(R.drawable.receiver_message_background)
+            }
+
+            when (chat.type) {
+                "text" -> {
+                    receiverMessageText.text = chat.content
+                    receiverMessageText.visibility = View.VISIBLE
+                }
+                "image" -> {
+                    receiverMessageText.text = "📷 Image"
+                }
+                "file" -> {
+                    receiverMessageText.text = "📎 File Attachment"
+                }
             }
         }
     }

@@ -287,6 +287,7 @@ class ChatActivity : AppCompatActivity() {
             senderId = currentUser.uid,
             content = messageText,
             timestamp = System.currentTimeMillis(),
+            isDeleted = false,
             type = type,
             attachmentUrl = attachmentUrl
         )
