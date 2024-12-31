@@ -3,7 +3,7 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission
@@ -25,9 +25,11 @@
         android:theme="@style/Theme.Taskchat"
         tools:targetApi="31">
         <activity
-            android:name=".groupactivities.AddMemberActivity"
+            android:name=".groupchatactivities.GroupChatActivity"
             android:exported="false" />
-        <!-- <activity -->
+        <activity
+            android:name=".groupactivities.AddMemberActivity"
+            android:exported="false" /> <!-- <activity -->
         <!-- android:name=".groupactivities.AddGroupMemberActivity" -->
         <!-- android:exported="false" /> -->
         <!--
