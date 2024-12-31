@@ -12,6 +12,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.card.MaterialCardView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.search.SearchBar
 import com.google.android.material.search.SearchView
@@ -23,6 +24,7 @@ import com.jfrashu.taskchat.R
 import com.jfrashu.taskchat.chatactivities.ChatActivity
 import com.jfrashu.taskchat.dataclasses.Task
 import com.jfrashu.taskchat.groupactivities.GroupInfoActivity
+import com.jfrashu.taskchat.groupchatactivities.GroupChatActivity
 
 class TaskActivity : AppCompatActivity() {
     private lateinit var db: FirebaseFirestore
@@ -35,6 +37,8 @@ class TaskActivity : AppCompatActivity() {
     private lateinit var noResultsText: TextView
     private var groupId: String? = null
     private var groupName: String? = null
+    private var groupDescription: String? = null
+    private var lastactivity: Long? = null
     private var isAdmin: Boolean = false
     private var currentUserId: String? = null
     private var snapshotListener: ListenerRegistration? = null
@@ -52,6 +56,8 @@ class TaskActivity : AppCompatActivity() {
         groupId = intent.getStringExtra("groupId")
         groupName = intent.getStringExtra("groupName")
         isAdmin = intent.getBooleanExtra("isAdmin", false)
+        groupDescription = intent.getStringExtra("groupDescription")
+
 
         if (groupId == null || currentUserId == null) {
             showToast("Invalid group or user information")
@@ -70,6 +76,13 @@ class TaskActivity : AppCompatActivity() {
         searchBar = findViewById(R.id.search_bar)
         searchView = findViewById(R.id.searchView)
         noResultsText = findViewById(R.id.noResultsText)
+
+        val viewGroupName = findViewById<TextView>(R.id.groupTitle)
+        val viewGroupDescriptor = findViewById<TextView>(R.id.groupDescription)
+        viewGroupName.text = "Group: $groupName"
+        viewGroupDescriptor.text =groupDescription
+
+
 
         // Handle menu button click
         val menuButton = findViewById<ImageButton>(R.id.menuButton)
@@ -94,6 +107,16 @@ class TaskActivity : AppCompatActivity() {
             }
         } else {
             createTaskBtn.hide()
+        }
+
+        // Assuming you have a groupId variable
+        findViewById<MaterialCardView>(R.id.groupNavigationCard).setOnClickListener {
+            val intent = Intent(this, GroupChatActivity::class.java).apply {
+                putExtra("groupId", groupId)  // Pass the groupId to the next activity
+
+//                putExtra("groupLastActivity",group.lastActivity)
+            }
+            startActivity(intent)
         }
     }
 
@@ -162,6 +185,16 @@ class TaskActivity : AppCompatActivity() {
                 }
             }
         })
+    }
+
+    private fun getTimeAgo(timestamp: Long): String {
+        val difference = System.currentTimeMillis() - timestamp
+        return when {
+            difference < 1000 * 60 -> "Just now"
+            difference < 1000 * 60 * 60 -> "${difference / (1000 * 60)} minutes ago"
+            difference < 1000 * 60 * 60 * 24 -> "${difference / (1000 * 60 * 60)} hours ago"
+            else -> "${difference / (1000 * 60 * 60 * 24)} days ago"
+        }
     }
 
     private fun filterTasks(query: String) {

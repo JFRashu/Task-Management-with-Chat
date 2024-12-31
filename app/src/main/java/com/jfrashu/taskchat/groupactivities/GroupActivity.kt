@@ -22,6 +22,7 @@ import com.google.firebase.firestore.ktx.toObject
 import com.jfrashu.taskchat.R
 import com.jfrashu.taskchat.dataclasses.Group
 import com.jfrashu.taskchat.dataclasses.User
+import com.jfrashu.taskchat.groupchatactivities.GroupChatActivity
 import com.jfrashu.taskchat.profileactivities.MyProfileInfoActivity
 import com.jfrashu.taskchat.taskactivities.TaskActivity
 
@@ -54,6 +55,7 @@ class GroupActivity : AppCompatActivity() {
         searchView = findViewById(R.id.searchView)
         progressIndicator = findViewById(R.id.progressIndicator)
 
+
         // Initialize menu button
         val menuButton = findViewById<ImageButton>(R.id.menuButton)
         menuButton.setOnClickListener {
@@ -79,12 +81,7 @@ class GroupActivity : AppCompatActivity() {
             }
         }
 
-        val groupNavigationCard = findViewById<MaterialCardView>(R.id.groupNavigationCard)
-        groupNavigationCard.setOnClickListener {
-            // Navigate to Group Activity
-            val intent = Intent(this, GroupActivity::class.java)
-            startActivity(intent)
-        }
+
     }
 
     private fun setupRecyclerView() {
@@ -115,6 +112,8 @@ class GroupActivity : AppCompatActivity() {
             val intent = Intent(this, TaskActivity::class.java).apply {
                 putExtra("groupId", group.groupId)
                 putExtra("groupName", group.name)
+                putExtra("groupDescription",group.description)
+                putExtra("groupLastActivity",group.lastActivity)
                 val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
                 putExtra("isAdmin", currentUserId == group.adminId)
             }
