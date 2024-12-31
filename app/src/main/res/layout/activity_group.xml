@@ -5,7 +5,6 @@
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-
     tools:context=".groupactivities.GroupActivity">
 
     <!--    guidelines Vertical-->
@@ -87,26 +86,91 @@
 
     </com.google.android.material.appbar.AppBarLayout>
 
-    <!-- No Results Text -->
-    <TextView
-        android:id="@+id/noResultsText"
-        android:layout_width="0dp"
+    <!-- MaterialCardView -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/groupNavigationCard"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:text="No Groups Found"
-        android:textAlignment="center"
-        android:textSize="16sp"
-        android:visibility="gone"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/appBarLayout" />
+        android:layout_margin="8dp"
+        app:cardElevation="4dp"
+        app:cardCornerRadius="8dp"
+        app:layout_constraintTop_toBottomOf="@id/appBarLayout">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="16dp">
+
+            <ImageView
+                android:id="@+id/taskIcon"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:contentDescription="Task icon"
+                android:src="@drawable/baseline_email_24"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:tint="@color/md_theme_onPrimaryFixedVariant"/>
+
+            <TextView
+                android:id="@+id/groupTitle"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:layout_marginStart="12dp"
+                android:textColor="@android:color/black"
+                app:layout_constraintStart_toEndOf="@id/taskIcon"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                tools:text="Group Chat"/>
+
+            <TextView
+                android:id="@+id/groupDescription"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:textSize="14sp"
+                android:maxLines="2"
+                android:ellipsize="end"
+                android:textColor="#5364B8"
+                app:layout_constraintStart_toStartOf="@id/groupTitle"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/groupTitle"
+                tools:text="Group description goes here"/>
+
+            <TextView
+                android:id="@+id/lastActivityLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="Last activity:"
+                android:textSize="12sp"
+                android:textStyle="italic"
+                android:textColor="#011062"
+                app:layout_constraintStart_toStartOf="@id/groupTitle"
+                app:layout_constraintTop_toBottomOf="@id/groupDescription"/>
+
+            <TextView
+                android:id="@+id/lastActivityTime"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:textSize="12sp"
+                android:textStyle="italic"
+                android:textColor="#011062"
+                app:layout_constraintStart_toEndOf="@id/lastActivityLabel"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="@id/lastActivityLabel"
+                tools:text="Jan 1, 2024 12:00"/>
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </com.google.android.material.card.MaterialCardView>
 
     <!-- Scrollable Content -->
     <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/appBarLayout">
+        app:layout_constraintTop_toBottomOf="@id/groupNavigationCard"
+        app:layout_constraintBottom_toBottomOf="parent">
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/groupRecyclerView"
@@ -128,7 +192,6 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
-        <!-- Search Results RecyclerView -->
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/searchRecyclerView"
             android:layout_width="match_parent"
@@ -145,7 +208,6 @@
         android:id="@+id/createGroupbtn"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-
         android:contentDescription="Create new group"
         app:layout_constraintBottom_toTopOf="@id/h_guideline1"
         app:layout_constraintEnd_toStartOf="@id/v_guideline3"

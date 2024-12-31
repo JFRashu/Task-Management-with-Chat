@@ -10,6 +10,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.card.MaterialCardView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.progressindicator.CircularProgressIndicator
 import com.google.android.material.search.SearchBar
@@ -76,6 +77,13 @@ class GroupActivity : AppCompatActivity() {
             if (!isFinishing && !isDestroyed) {
                 startActivity(Intent(this, GroupInvitationActivity::class.java))
             }
+        }
+
+        val groupNavigationCard = findViewById<MaterialCardView>(R.id.groupNavigationCard)
+        groupNavigationCard.setOnClickListener {
+            // Navigate to Group Activity
+            val intent = Intent(this, GroupActivity::class.java)
+            startActivity(intent)
         }
     }
 
