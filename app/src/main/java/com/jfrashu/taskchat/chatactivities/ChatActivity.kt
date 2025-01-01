@@ -31,6 +31,8 @@ import com.jfrashu.taskchat.databinding.ActivityChatBinding
 import com.jfrashu.taskchat.dataclasses.Chat
 import com.jfrashu.taskchat.taskactivities.TaskInfoActivity
 import java.util.UUID
+import com.jfrashu.taskchat.notifications.NotificationHelper
+import com.google.firebase.firestore.FieldValue
 
 class ChatActivity : AppCompatActivity() {
     private lateinit var binding: ActivityChatBinding
@@ -55,10 +57,16 @@ class ChatActivity : AppCompatActivity() {
     private var isLoadingMore = false
     private var allMessagesLoaded = false
 
+    private lateinit var notificationHelper: NotificationHelper
+    private var taskTitle: String = ""
+    private var taskMembers: List<String> = listOf()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityChatBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        notificationHelper = NotificationHelper(FirebaseFirestore.getInstance())
 
         taskId = intent.getStringExtra("taskId") ?: ""
         groupId = intent.getStringExtra("groupId") ?: ""
@@ -72,6 +80,90 @@ class ChatActivity : AppCompatActivity() {
         setupUI()
         setupBackButton()
         checkTaskAccess()
+        loadTaskMembers()
+    }
+
+    private fun loadTaskMembers() {
+        db.collection("groups").document(groupId)
+            .get()
+            .addOnSuccessListener { groupDoc ->
+                taskMembers = groupDoc.get("members") as? List<String> ?: listOf()
+                // Load task title for notifications
+                db.collection("groups").document(groupId)
+                    .collection("tasks").document(taskId)
+                    .get()
+                    .addOnSuccessListener { taskDoc ->
+                        taskTitle = taskDoc.getString("title") ?: "Task Chat"
+                    }
+            }
+    }
+
+    private fun sendMessage(type: String = "text", attachmentUrl: String = "") {
+        if (taskStatus == "completed") {
+            showToast("Cannot send messages in completed tasks")
+            return
+        }
+
+        val messageText = binding.messageInput.text.toString().trim()
+        if (messageText.isEmpty() && attachmentUrl.isEmpty()) return
+
+        val currentUser = FirebaseAuth.getInstance().currentUser ?: run {
+            showToast("Please sign in to send messages")
+            return
+        }
+
+        val message = Chat(
+            messageId = UUID.randomUUID().toString(),
+            taskId = taskId,
+            senderId = currentUser.uid,
+            content = messageText,
+            timestamp = System.currentTimeMillis(),
+            isDeleted = false,
+            type = type,
+            attachmentUrl = attachmentUrl
+        )
+
+        binding.sendButton.isEnabled = false
+
+        db.collection("groups").document(groupId)
+            .collection("tasks").document(taskId)
+            .collection("chats").document(message.messageId)
+            .set(message)
+            .addOnSuccessListener {
+                binding.messageInput.text.clear()
+                binding.sendButton.isEnabled = true
+
+                // Send notifications to other task members
+                sendNotificationsToMembers(messageText, currentUser.uid)
+            }
+            .addOnFailureListener { e ->
+                showToast("Failed to send message: ${e.message}")
+                Log.e("ChatActivity", "Error sending message", e)
+                binding.sendButton.isEnabled = true
+            }
+    }
+
+    private fun sendNotificationsToMembers(messageContent: String, senderId: String) {
+        // Get sender's name
+        db.collection("users").document(senderId)
+            .get()
+            .addOnSuccessListener { userDoc ->
+                val senderName = userDoc.getString("name") ?: "Someone"
+
+                // Send notification to each member except the sender
+                taskMembers.forEach { memberId ->
+                    if (memberId != senderId) {
+                        notificationHelper.sendNotification(
+                            recipientUserId = memberId,
+                            title = "New message in $taskTitle",
+                            message = "$senderName: $messageContent",
+                            type = "task_chat",
+                            groupId = groupId,
+                            taskId = taskId
+                        )
+                    }
+                }
+            }
     }
 
     private fun setupMessageListener() {
@@ -267,47 +359,6 @@ class ChatActivity : AppCompatActivity() {
             }
     }
 
-    private fun sendMessage(type: String = "text", attachmentUrl: String = "") {
-        if (taskStatus == "completed") {
-            showToast("Cannot send messages in completed tasks")
-            return
-        }
-
-        val messageText = binding.messageInput.text.toString().trim()
-        if (messageText.isEmpty() && attachmentUrl.isEmpty()) return
-
-        val currentUser = FirebaseAuth.getInstance().currentUser ?: run {
-            showToast("Please sign in to send messages")
-            return
-        }
-
-        val message = Chat(
-            messageId = UUID.randomUUID().toString(),
-            taskId = taskId,
-            senderId = currentUser.uid,
-            content = messageText,
-            timestamp = System.currentTimeMillis(),
-            isDeleted = false,
-            type = type,
-            attachmentUrl = attachmentUrl
-        )
-
-        binding.sendButton.isEnabled = false
-
-        db.collection("groups").document(groupId)
-            .collection("tasks").document(taskId)
-            .collection("chats").document(message.messageId)
-            .set(message)
-            .addOnSuccessListener {
-                binding.messageInput.text.clear()
-                binding.sendButton.isEnabled = true
-            }
-            .addOnFailureListener { e ->
-                showToast("Failed to send message: ${e.message}")
-                Log.e("ChatActivity", "Error sending message", e)
-                binding.sendButton.isEnabled = true
-            }
-    }
 
     private fun checkTaskAccess() {
         db.document("groups/$groupId/tasks/$taskId")

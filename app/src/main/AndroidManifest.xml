@@ -100,7 +100,7 @@
         </activity>
 
         <service
-            android:name=".MyFirebaseMessagingService"
+            android:name=".notifications.MyFirebaseMessagingService"
             android:exported="false"
             tools:ignore="Instantiatable">
             <intent-filter>
