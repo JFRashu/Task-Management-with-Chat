@@ -4,11 +4,13 @@ import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import com.google.firebase.auth.FirebaseAuth
 import com.jfrashu.taskchat.databinding.ActivitySplashBinding
 import com.jfrashu.taskchat.groupactivities.GroupActivity
-import com.jfrashu.taskchat.loginacivities.LoginActivity
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.messaging.FirebaseMessaging
 
 class SplashActivity : AppCompatActivity() {
     private lateinit var binding: ActivitySplashBinding
@@ -20,6 +22,7 @@ class SplashActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         auth = FirebaseAuth.getInstance()
+        checkAndUpdateFCMToken()
 
         Handler(Looper.getMainLooper()).postDelayed({
             checkUserLoginStatus()
@@ -40,5 +43,20 @@ class SplashActivity : AppCompatActivity() {
 
         startActivity(intent)
         finish()
+    }
+    private fun checkAndUpdateFCMToken() {
+        val currentUser = FirebaseAuth.getInstance().currentUser
+        if (currentUser != null) {
+            FirebaseMessaging.getInstance().token
+                .addOnSuccessListener { token ->
+                    FirebaseFirestore.getInstance()
+                        .collection("users")
+                        .document(currentUser.uid)
+                        .update("fcmToken", token)
+                        .addOnSuccessListener {
+                            Log.d("NOTIFICATIONS", "FCM Token updated on app start")
+                        }
+                }
+        }
     }
 }

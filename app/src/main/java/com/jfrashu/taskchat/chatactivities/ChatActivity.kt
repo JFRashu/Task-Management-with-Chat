@@ -144,15 +144,18 @@ class ChatActivity : AppCompatActivity() {
     }
 
     private fun sendNotificationsToMembers(messageContent: String, senderId: String) {
+        Log.d("NOTIFICATIONS", "Sending notifications for message: $messageContent")
         // Get sender's name
         db.collection("users").document(senderId)
             .get()
             .addOnSuccessListener { userDoc ->
                 val senderName = userDoc.getString("name") ?: "Someone"
+                Log.d("NOTIFICATIONS", "Sender name: $senderName")  // Add this
 
                 // Send notification to each member except the sender
                 taskMembers.forEach { memberId ->
                     if (memberId != senderId) {
+                        Log.d("NOTIFICATIONS", "Sending to member: $memberId")  // Add this
                         notificationHelper.sendNotification(
                             recipientUserId = memberId,
                             title = "New message in $taskTitle",

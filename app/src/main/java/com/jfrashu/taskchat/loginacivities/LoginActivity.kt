@@ -13,9 +13,11 @@ import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
 import com.jfrashu.taskchat.databinding.ActivityLoginBinding
 import com.jfrashu.taskchat.registeractivities.RegisterStep1Activity
 import android.content.SharedPreferences
+import android.util.Log
 import androidx.appcompat.app.AlertDialog
 import com.jfrashu.taskchat.groupactivities.GroupActivity
 import com.jfrashu.taskchat.network.NetworkUtils
+import com.google.firebase.messaging.FirebaseMessaging
 
 class LoginActivity : AppCompatActivity() {
     private lateinit var binding: ActivityLoginBinding
@@ -38,6 +40,26 @@ class LoginActivity : AppCompatActivity() {
         setupTextWatchers()
         setupClickListeners()
         loadSavedCredentials()
+        saveFCMToken()
+    }
+
+    private fun saveFCMToken() {
+        FirebaseMessaging.getInstance().token
+            .addOnSuccessListener { token ->
+                val userId = FirebaseAuth.getInstance().currentUser?.uid
+                userId?.let { uid ->
+                    FirebaseFirestore.getInstance()
+                        .collection("users")
+                        .document(uid)
+                        .update("fcmToken", token)
+                        .addOnSuccessListener {
+                            Log.d("NOTIFICATIONS", "FCM Token saved for user: $uid")
+                        }
+                        .addOnFailureListener { e ->
+                            Log.e("NOTIFICATIONS", "Error saving FCM token: ${e.message}")
+                        }
+                }
+            }
     }
 
     private fun setupTextWatchers() {
