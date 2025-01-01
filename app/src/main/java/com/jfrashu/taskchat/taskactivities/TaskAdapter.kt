@@ -12,7 +12,7 @@ import com.jfrashu.taskchat.dataclasses.Task
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-
+import java.math.BigInteger
 class  TaskAdapter(
     private var tasks: List<Task>,
     private val onTaskClick: (Task) -> Unit
@@ -65,7 +65,10 @@ class  TaskAdapter(
 
         // Format last activity time
         val dateFormat = SimpleDateFormat("MMM d, yyyy HH:mm", Locale.getDefault())
-        holder.lastActivityTime.text = dateFormat.format(Date(task.lastActivity))
+        holder.lastActivityTime.text = task.lastActivity?.toDate()?.let {
+            dateFormat.format(it)
+        } ?: "-"
+
 
         // Set click listener
         holder.itemView.setOnClickListener { onTaskClick(task) }

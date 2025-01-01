@@ -125,7 +125,15 @@ class TaskInfoActivity : AppCompatActivity() {
 //        lastMessageText.text = "Last message: ${if (task.lastMessage.isNotEmpty()) task.lastMessage else "No messages yet"}"
         createdByText.text = "Created by: ${task.createdBy}" // This will be updated when user info is fetched
         createdAtText.text = "Created: ${DateUtils.getRelativeTimeSpanString(task.createdAt)}"
-        lastActivityText.text = "Last activity: ${DateUtils.getRelativeTimeSpanString(task.lastActivity)}"
+        lastActivityText.text = "Last activity: ${
+            task.lastActivity?.let { timestamp ->
+                DateUtils.getRelativeTimeSpanString(
+                    timestamp.toDate().time,
+                    System.currentTimeMillis(),
+                    DateUtils.MINUTE_IN_MILLIS
+                )
+            } ?: "-"
+        }"
 
         // Update status chip and toggle
         statusChip.text = task.status.replace("_", " ").replaceFirstChar { it.uppercase() }

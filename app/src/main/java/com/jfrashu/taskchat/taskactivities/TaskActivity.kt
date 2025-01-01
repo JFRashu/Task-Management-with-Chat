@@ -38,7 +38,7 @@ class TaskActivity : AppCompatActivity() {
     private var groupId: String? = null
     private var groupName: String? = null
     private var groupDescription: String? = null
-    private var lastactivity: Long? = null
+
     private var isAdmin: Boolean = false
     private var currentUserId: String? = null
     private var snapshotListener: ListenerRegistration? = null
