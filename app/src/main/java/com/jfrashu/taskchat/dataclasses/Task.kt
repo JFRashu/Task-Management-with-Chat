@@ -10,7 +10,7 @@ data class Task(
     val description: String = "",
     val createdBy: String = "", // admin's userId
     val status: String = "pending", // pending, in_progress, completed
-    val lastActivity: Timestamp? = null,
+    val lastActivity: Long =  System.currentTimeMillis(),
     val createdAt: Long = System.currentTimeMillis(),
     val lastMessage : String =""
 

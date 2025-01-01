@@ -65,9 +65,8 @@ class  TaskAdapter(
 
         // Format last activity time
         val dateFormat = SimpleDateFormat("MMM d, yyyy HH:mm", Locale.getDefault())
-        holder.lastActivityTime.text = task.lastActivity?.toDate()?.let {
-            dateFormat.format(it)
-        } ?: "-"
+        val date = Date(task.lastActivity) // Convert Long to Date
+        holder.lastActivityTime.text = dateFormat.format(date) // Format the date
 
 
         // Set click listener
