@@ -111,6 +111,7 @@ class ChatActivity : AppCompatActivity() {
             .collection("tasks")
             .document(taskId)
             .collection("chats")
+            .whereEqualTo("isDeleted", false)
             .orderBy("timestamp", Query.Direction.ASCENDING)
             .apply {
                 lastLoadedMessageTimestamp?.let {
@@ -162,6 +163,7 @@ class ChatActivity : AppCompatActivity() {
             .collection("tasks")
             .document(taskId)
             .collection("chats")
+            .whereEqualTo("isDeleted", false) // Exclude deleted messages
             .orderBy("timestamp", Query.Direction.DESCENDING)
             .whereLessThan("timestamp", lastLoadedMessageTimestamp!!)
             .limit(MESSAGES_PER_PAGE.toLong())
@@ -419,6 +421,7 @@ class ChatActivity : AppCompatActivity() {
             ))
             .addOnSuccessListener {
                 showToast("Message deleted")
+
             }
             .addOnFailureListener { e ->
                 showToast("Failed to delete message: ${e.message}")
