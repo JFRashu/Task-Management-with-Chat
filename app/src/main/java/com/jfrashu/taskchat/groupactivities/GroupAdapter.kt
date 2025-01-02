@@ -36,7 +36,7 @@ class GroupAdapter(
     override fun getItemCount() = groups.size
 
     fun updateGroups(newGroups: List<Group>) {
-        groups = newGroups
+        groups = newGroups.filter { !it.isDeleted }  // Additional safety check
         notifyDataSetChanged()
     }
 

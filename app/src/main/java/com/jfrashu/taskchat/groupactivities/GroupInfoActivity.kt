@@ -249,8 +249,17 @@ class GroupInfoActivity : AppCompatActivity() {
                         )
                     )
                     .addOnSuccessListener {
-                        showToast("Group marked as deleted")
-                        finish() // Close the activity
+                        showToast("Group deleted successfully")
+
+                        // Create new intent for GroupActivity
+                        val intent = Intent(this, GroupActivity::class.java)
+                        // Clear all activities above it in the stack
+                        intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or
+                                Intent.FLAG_ACTIVITY_NEW_TASK or
+                                Intent.FLAG_ACTIVITY_CLEAR_TASK
+
+                        startActivity(intent)
+                        finish() // Finish current activity
                     }
                     .addOnFailureListener { e ->
                         showToast("Error deleting group: ${e.message}")
@@ -258,10 +267,6 @@ class GroupInfoActivity : AppCompatActivity() {
             }
         }
     }
-
-
-
-
     private fun updateUI(group: Group) {
         groupNameInput.setText(group.name)
         groupDescriptionInput.setText(group.description)

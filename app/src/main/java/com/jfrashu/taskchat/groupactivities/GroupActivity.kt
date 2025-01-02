@@ -4,6 +4,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
+import android.util.Log
 import android.view.View
 import android.widget.ImageButton
 import androidx.appcompat.app.AppCompatActivity
@@ -18,6 +19,7 @@ import com.google.android.material.search.SearchView
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
+import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.ktx.toObject
 import com.jfrashu.taskchat.R
 import com.jfrashu.taskchat.dataclasses.Group
@@ -50,13 +52,10 @@ class GroupActivity : AppCompatActivity() {
     }
 
     private fun setupUI() {
-        // Initialize views
         searchBar = findViewById(R.id.search_bar)
         searchView = findViewById(R.id.searchView)
         progressIndicator = findViewById(R.id.progressIndicator)
 
-
-        // Initialize menu button
         val menuButton = findViewById<ImageButton>(R.id.menuButton)
         menuButton.setOnClickListener {
             val currentUser = FirebaseAuth.getInstance().currentUser
@@ -65,7 +64,6 @@ class GroupActivity : AppCompatActivity() {
             }
         }
 
-        // Create group button
         val createGroupBtn = findViewById<FloatingActionButton>(R.id.createGroupbtn)
         createGroupBtn.setOnClickListener {
             if (!isFinishing && !isDestroyed) {
@@ -73,19 +71,15 @@ class GroupActivity : AppCompatActivity() {
             }
         }
 
-        // Group requests button
         val seeRequestsBtn = findViewById<ImageButton>(R.id.groupRequestsButton)
         seeRequestsBtn.setOnClickListener {
             if (!isFinishing && !isDestroyed) {
                 startActivity(Intent(this, GroupInvitationActivity::class.java))
             }
         }
-
-
     }
 
     private fun setupRecyclerView() {
-        // Main RecyclerView setup
         recyclerView = findViewById(R.id.groupRecyclerView)
         groupAdapter = GroupAdapter(emptyList()) { group ->
             navigateToGroup(group)
@@ -95,7 +89,6 @@ class GroupActivity : AppCompatActivity() {
             adapter = groupAdapter
         }
 
-        // Search RecyclerView setup
         searchRecyclerView = findViewById(R.id.searchRecyclerView)
         searchAdapter = GroupAdapter(emptyList()) { group ->
             navigateToGroup(group)
@@ -112,8 +105,8 @@ class GroupActivity : AppCompatActivity() {
             val intent = Intent(this, TaskActivity::class.java).apply {
                 putExtra("groupId", group.groupId)
                 putExtra("groupName", group.name)
-                putExtra("groupDescription",group.description)
-                putExtra("groupLastActivity",group.lastActivity)
+                putExtra("groupDescription", group.description)
+                putExtra("groupLastActivity", group.lastActivity)
                 val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
                 putExtra("isAdmin", currentUserId == group.adminId)
             }
@@ -122,42 +115,34 @@ class GroupActivity : AppCompatActivity() {
     }
 
     private fun setupSearch() {
-        // Connect SearchView with SearchBar
         searchView.setupWithSearchBar(searchBar)
 
-        // Setup search functionality
         searchView.editText.setOnEditorActionListener { textView, _, _ ->
             val query = textView.text.toString()
             filterGroups(query)
             false
         }
 
-        // Add text change listener for real-time search
         searchView.editText.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
                 filterGroups(s?.toString() ?: "")
             }
-
             override fun afterTextChanged(s: Editable?) {}
         })
 
-        // Handle search view state changes
-        searchView.addTransitionListener(object : SearchView.TransitionListener {
-            override fun onStateChanged(searchView: SearchView, previousState: SearchView.TransitionState, newState: SearchView.TransitionState) {
-                when (newState) {
-                    SearchView.TransitionState.SHOWING -> {
-                        searchRecyclerView.isVisible = true
-                    }
-                    SearchView.TransitionState.HIDDEN -> {
-                        searchRecyclerView.isVisible = false
-                        groupAdapter.updateGroups(allGroups) // Show all groups when search is closed
-                    }
-                    else -> {}
+        searchView.addTransitionListener { searchView, previousState, newState ->
+            when (newState) {
+                SearchView.TransitionState.SHOWING -> {
+                    searchRecyclerView.isVisible = true
                 }
+                SearchView.TransitionState.HIDDEN -> {
+                    searchRecyclerView.isVisible = false
+                    groupAdapter.updateGroups(allGroups)
+                }
+                else -> {}
             }
-        })
+        }
     }
 
     private fun filterGroups(query: String) {
@@ -166,14 +151,12 @@ class GroupActivity : AppCompatActivity() {
         } else {
             allGroups.filter { group ->
                 group.name.contains(query, ignoreCase = true)
-//                        group.description?.contains(query, ignoreCase = true) == true
             }
         }
 
         searchAdapter.updateGroups(filteredGroups)
         searchRecyclerView.isVisible = true
 
-        // Show/hide no results message if needed
         if (filteredGroups.isEmpty() && query.isNotEmpty()) {
             showToast("No Groups Found")
         }
@@ -181,50 +164,83 @@ class GroupActivity : AppCompatActivity() {
 
     private fun fetchUserGroups() {
         progressIndicator.isVisible = true
-
-        // Remove previous listener if it exists
         snapshotListener?.remove()
 
         val currentUser = FirebaseAuth.getInstance().currentUser
         currentUser?.let { user ->
-            createInitialGroup(user.uid)
-
             snapshotListener = db.collection("groups")
                 .whereArrayContains("members", user.uid)
+                .orderBy("lastActivity", Query.Direction.DESCENDING)
                 .addSnapshotListener { snapshot, e ->
                     if (!isFinishing && !isDestroyed) {
                         progressIndicator.isVisible = false
 
                         if (e != null) {
+                            Log.e("GroupFetch", "Error fetching groups", e)
                             showToast("Error fetching groups: ${e.message}")
                             return@addSnapshotListener
                         }
 
-                        allGroups = snapshot?.documents?.mapNotNull { doc ->
-                            doc.toObject<Group>()
-                        } ?: emptyList()
+                        try {
+                            val processedGroups = mutableListOf<Group>()
 
-                        groupAdapter.updateGroups(allGroups)
+                            snapshot?.documents?.forEach { doc ->
+                                try {
+                                    // First check the raw isDeleted value
+                                    val rawIsDeleted = doc.getBoolean("isDeleted") ?: false
 
-                        // Update search results if search is active
-                        if (searchView.isShowing) {
-                            val query = searchView.editText.text.toString()
-                            filterGroups(query)
+                                    if (!rawIsDeleted) {
+                                        val group = doc.toObject<Group>()
+                                        if (group != null) {
+                                            processedGroups.add(group)
+                                            Log.d("GroupFetch", "Added group: ${group.groupId}, name: ${group.name}, isDeleted: ${group.isDeleted}")
+                                        }
+                                    } else {
+                                        Log.d("GroupFetch", "Skipped deleted group: ${doc.id}")
+                                    }
+                                } catch (docEx: Exception) {
+                                    Log.e("GroupFetch", "Error processing document: ${doc.id}", docEx)
+                                }
+                            }
+
+                            allGroups = processedGroups
+                            Log.d("GroupFetch", "Final groups count: ${allGroups.size}")
+
+                            groupAdapter.updateGroups(allGroups)
+
+                            if (searchView.isShowing) {
+                                val query = searchView.editText.text.toString()
+                                filterGroups(query)
+                            }
+
+                        } catch (ex: Exception) {
+                            Log.e("GroupFetch", "Error processing groups", ex)
+                            showToast("Error processing groups: ${ex.message}")
                         }
                     }
                 }
+        } ?: run {
+            Log.e("GroupFetch", "No user logged in")
+            progressIndicator.isVisible = false
+            showToast("Please log in to view groups")
         }
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        snapshotListener?.remove()
-    }
+    // Helper function to show toast messages
 
 
-
-
-
+//    // Helper function to filter groups based on search query
+//    private fun filterGroups(query: String) {
+//        val filteredGroups = if (query.isEmpty()) {
+//            allGroups
+//        } else {
+//            allGroups.filter { group ->
+//                group.name.contains(query, ignoreCase = true) ||
+//                        group.description.contains(query, ignoreCase = true)
+//            }
+//        }
+//        groupAdapter.updateGroups(filteredGroups)
+//    }
 
 
     private fun fetchAndNavigateToProfile(userId: String) {
@@ -251,7 +267,6 @@ class GroupActivity : AppCompatActivity() {
         }
     }
 
-
     private fun createInitialGroup(userId: String) {
         if (!isFinishing && !isDestroyed) {
             db.collection("groups").limit(1).get()
@@ -263,7 +278,7 @@ class GroupActivity : AppCompatActivity() {
                             description = "Welcome to your first group!",
                             adminId = userId,
                             members = listOf(userId),
-                            isDeleted = false  // Add this line
+                            isDeleted = false
                         )
 
                         db.collection("groups")
@@ -283,13 +298,16 @@ class GroupActivity : AppCompatActivity() {
         }
     }
 
-
-
     override fun onResume() {
         super.onResume()
         if (!isFinishing && !isDestroyed) {
             setupRecyclerView()
             fetchUserGroups()
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        snapshotListener?.remove()
     }
 }
