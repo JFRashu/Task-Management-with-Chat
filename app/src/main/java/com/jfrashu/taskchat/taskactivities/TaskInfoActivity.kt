@@ -18,7 +18,7 @@ class TaskInfoActivity : AppCompatActivity() {
     private lateinit var statusChip: Chip
     private lateinit var statusToggleGroup: MaterialButtonToggleGroup
     private lateinit var descriptionText: TextView
-//    private lateinit var lastMessageText: TextView
+    private lateinit var lastMessageText: TextView
     private lateinit var createdByText: TextView
     private lateinit var createdAtText: TextView
     private lateinit var lastActivityText: TextView
@@ -55,7 +55,7 @@ class TaskInfoActivity : AppCompatActivity() {
 //        lastMessageText = findViewById(R.id.lastMessageText)
         createdByText = findViewById(R.id.createdByText)
         createdAtText = findViewById(R.id.createdAtText)
-        lastActivityText = findViewById(R.id.lastActivityText)
+//        lastActivityText = findViewById(R.id.lastActivityText)
     }
 
     private fun setupToolbar() {
@@ -125,7 +125,7 @@ class TaskInfoActivity : AppCompatActivity() {
 //        lastMessageText.text = "Last message: ${if (task.lastMessage.isNotEmpty()) task.lastMessage else "No messages yet"}"
         createdByText.text = "Created by: ${task.createdBy}" // This will be updated when user info is fetched
         createdAtText.text = "Created: ${DateUtils.getRelativeTimeSpanString(task.createdAt)}"
-        lastActivityText.text = "Last activity:${DateUtils.getRelativeTimeSpanString(task.lastActivity)}"
+//        lastActivityText.text = "Last activity:${DateUtils.getRelativeTimeSpanString(task.lastActivity)}"
 
         // Update status chip and toggle
         statusChip.text = task.status.replace("_", " ").replaceFirstChar { it.uppercase() }

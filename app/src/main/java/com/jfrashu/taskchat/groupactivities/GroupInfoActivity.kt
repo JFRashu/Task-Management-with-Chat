@@ -189,7 +189,7 @@ class GroupInfoActivity : AppCompatActivity() {
         addMemberButton = findViewById(R.id.addMemberButton)
         saveGroupFab = findViewById(R.id.saveGroupFab)
         createdAtText = findViewById(R.id.createdAtText)
-        lastActivityText = findViewById(R.id.lastActivityText)
+//        lastActivityText = findViewById(R.id.lastActivityText)
         toolbar = findViewById(R.id.toolbar)
         // Add this with other view initializations
         deleteGroupButton = findViewById(R.id.deleteGroupButton)
@@ -281,7 +281,7 @@ class GroupInfoActivity : AppCompatActivity() {
             System.currentTimeMillis(),
             DateUtils.MINUTE_IN_MILLIS
         )
-        lastActivityText.text = "Last activity: $relativeTime"
+//        lastActivityText.text = "Last activity: $relativeTime"
     }
 
     private fun setupMembersRecyclerView(group: Group) {

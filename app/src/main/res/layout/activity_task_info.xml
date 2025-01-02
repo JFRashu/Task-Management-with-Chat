@@ -152,14 +152,14 @@
                 android:textColor="?attr/colorOnSurfaceVariant"
                 tools:text="Created: January 1, 2024" />
 
-            <TextView
-                android:id="@+id/lastActivityText"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:textAppearance="?attr/textAppearanceBodyMedium"
-                android:textColor="?attr/colorOnSurfaceVariant"
-                tools:text="Last activity: 2 hours ago" />
+<!--            <TextView-->
+<!--                android:id="@+id/lastActivityText"-->
+<!--                android:layout_width="wrap_content"-->
+<!--                android:layout_height="wrap_content"-->
+<!--                android:layout_marginTop="4dp"-->
+<!--                android:textAppearance="?attr/textAppearanceBodyMedium"-->
+<!--                android:textColor="?attr/colorOnSurfaceVariant"-->
+<!--                tools:text="Last activity: 2 hours ago" />-->
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 

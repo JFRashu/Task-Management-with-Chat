@@ -23,7 +23,7 @@ class  TaskAdapter(
         val taskDescription: TextView = view.findViewById(R.id.taskDescription)
         val taskStatus: Chip = view.findViewById(R.id.taskStatus)
 //        val lastMessage: TextView = view.findViewById(R.id.lastMessage)
-        val lastActivityTime: TextView = view.findViewById(R.id.lastActivityTime)
+//        val lastActivityTime: TextView = view.findViewById(R.id.lastActivityTime)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): TaskViewHolder {
@@ -64,9 +64,9 @@ class  TaskAdapter(
 //        }
 
         // Format last activity time
-        val dateFormat = SimpleDateFormat("MMM d, yyyy HH:mm", Locale.getDefault())
-        val date = Date(task.lastActivity) // Convert Long to Date
-        holder.lastActivityTime.text = dateFormat.format(date) // Format the date
+//        val dateFormat = SimpleDateFormat("MMM d, yyyy HH:mm", Locale.getDefault())
+//        val date = Date(task.lastActivity) // Convert Long to Date
+//        holder.lastActivityTime.text = dateFormat.format(date) // Format the date
 
 
         // Set click listener
