@@ -24,7 +24,7 @@ SAT.R a TaskChatting App serves as a practical implementation of modern Android 
 ### Group Management
 <p align="center">
 <img src="Screentshots/GroupActivity.jpg" width="300" height="600" alt="Group List"/>
-<img src="Screentshots/GroupInformation.jpg" width="300" height="600" alt="Group Information"/>
+<img src="Screentshots/Updated_group_info.jpg" width="300" height="600" alt="Group Information"/>
 <img src="Screentshots/GroupInvitation.jpg" width="300" height="600" alt="Group Invitation"/>
 <img src="Screentshots/CreateGroup.jpg" width="300" height="600" alt="Create New Group"/>
 <img src="Screentshots/AddMember.jpg" width="300" height="600" alt="Add new member to exiting Group"/>
