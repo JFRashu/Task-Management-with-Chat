@@ -21,6 +21,7 @@ import androidx.core.view.isVisible
 import com.google.firebase.firestore.ListenerRegistration
 import java.text.SimpleDateFormat
 import java.util.*
+import androidx.appcompat.app.AlertDialog
 
 class GroupInfoActivity : AppCompatActivity() {
     private lateinit var db: FirebaseFirestore
@@ -34,6 +35,8 @@ class GroupInfoActivity : AppCompatActivity() {
     private lateinit var lastActivityText: TextView
     private lateinit var toolbar: MaterialToolbar
     private lateinit var membersAdapter: GroupMembersAdapter
+
+    private lateinit var deleteGroupButton: MaterialButton
 
     private var groupId: String? = null
     private var currentUserId: String = ""
@@ -188,6 +191,16 @@ class GroupInfoActivity : AppCompatActivity() {
         createdAtText = findViewById(R.id.createdAtText)
         lastActivityText = findViewById(R.id.lastActivityText)
         toolbar = findViewById(R.id.toolbar)
+        // Add this with other view initializations
+        deleteGroupButton = findViewById(R.id.deleteGroupButton)
+
+        // Initially hide the delete button until we verify admin status
+        deleteGroupButton.isVisible = false
+
+        // Setup delete button click listener
+        deleteGroupButton.setOnClickListener {
+            showDeleteConfirmationDialog()
+        }
 
         // Setup toolbar
         toolbar.setNavigationOnClickListener {
@@ -209,6 +222,44 @@ class GroupInfoActivity : AppCompatActivity() {
             saveGroupChanges()
         }
     }
+    private fun showDeleteConfirmationDialog() {
+        AlertDialog.Builder(this)
+            .setTitle("Delete Group")
+            .setMessage("Are you sure you want to delete this group?")
+            .setPositiveButton("Yes") { _, _ ->
+                markGroupAsDeleted()
+            }
+            .setNegativeButton("No", null)
+            .show()
+    }
+
+    private fun markGroupAsDeleted() {
+        currentGroup?.let { group ->
+            if (group.adminId != currentUserId) {
+                showToast("Only admin can delete the group")
+                return
+            }
+
+            groupId?.let { gId ->
+                db.collection("groups").document(gId)
+                    .update(
+                        mapOf(
+                            "isDeleted" to true,
+                            "lastActivity" to System.currentTimeMillis()
+                        )
+                    )
+                    .addOnSuccessListener {
+                        showToast("Group marked as deleted")
+                        finish() // Close the activity
+                    }
+                    .addOnFailureListener { e ->
+                        showToast("Error deleting group: ${e.message}")
+                    }
+            }
+        }
+    }
+
+
 
 
     private fun updateUI(group: Group) {
@@ -251,6 +302,7 @@ class GroupInfoActivity : AppCompatActivity() {
         groupDescriptionInput.isEnabled = isAdmin
         addMemberButton.isEnabled = isAdmin
         saveGroupFab.isVisible = isAdmin
+        deleteGroupButton.isVisible = isAdmin
     }
 
 

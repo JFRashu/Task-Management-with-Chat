@@ -137,6 +137,17 @@
                         app:icon="@drawable/baseline_person_add_24" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
+            <!-- Add this before the Group Stats LinearLayout -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/deleteGroupButton"
+                style="@style/Widget.Material3.Button.TonalButton.Icon"
+                android:layout_width="180dp"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:text="Delete Group"
+                android:textColor="#B3261E"
+                app:icon="@drawable/baseline_delete_24"
+                app:iconTint="#B3261E" />
 
             <!-- Group Stats -->
             <LinearLayout

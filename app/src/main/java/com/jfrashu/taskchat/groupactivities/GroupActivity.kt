@@ -262,7 +262,8 @@ class GroupActivity : AppCompatActivity() {
                             name = "My First Group",
                             description = "Welcome to your first group!",
                             adminId = userId,
-                            members = listOf(userId)
+                            members = listOf(userId),
+                            isDeleted = false  // Add this line
                         )
 
                         db.collection("groups")

@@ -8,5 +8,6 @@ data class Group(
     val members: List<String> = listOf(), // List of member userIds
     val tasks: List<String> = listOf(), // List of task IDs
     val createdAt: Long = System.currentTimeMillis(),
-    val lastActivity: Long =System.currentTimeMillis()
+    val lastActivity: Long = System.currentTimeMillis(),
+    val isDeleted: Boolean = false  // Added isDeleted flag
 )
