@@ -83,6 +83,7 @@ class ChatActivity : AppCompatActivity() {
             .collection("tasks")
             .document(taskId)
             .collection("chats")
+            .whereEqualTo("isDeleted", false)
             .orderBy("timestamp", Query.Direction.DESCENDING)
             .limit(MESSAGES_PER_PAGE.toLong())
 
@@ -269,37 +270,37 @@ class ChatActivity : AppCompatActivity() {
             }
     }
 
-    private fun sendMessage(type: String = "text", attachmentUrl: String = "") {
+    private fun sendMessage(type: String = "text") {
         if (taskStatus == "completed") {
             showToast("Cannot send messages in completed tasks")
             return
         }
 
         val messageText = binding.messageInput.text.toString().trim()
-        if (messageText.isEmpty() && attachmentUrl.isEmpty()) return
+        if (messageText.isEmpty()) return
 
         val currentUser = FirebaseAuth.getInstance().currentUser ?: run {
             showToast("Please sign in to send messages")
             return
         }
 
-        val message = Chat(
-            messageId = UUID.randomUUID().toString(),
-            taskId = taskId,
-            senderId = currentUser.uid,
-            content = messageText,
-            timestamp = System.currentTimeMillis(),
-            isDeleted = false,
-            type = type,
-            attachmentUrl = attachmentUrl
+        val messageData = mapOf(
+            "messageId" to UUID.randomUUID().toString(),
+            "taskId" to taskId,
+            "senderId" to currentUser.uid,
+            "content" to messageText,
+            "timestamp" to System.currentTimeMillis(),
+            "type" to type,
+            "attachmentUrl" to "",
+            "isDeleted" to false
         )
 
         binding.sendButton.isEnabled = false
 
         db.collection("groups").document(groupId)
             .collection("tasks").document(taskId)
-            .collection("chats").document(message.messageId)
-            .set(message)
+            .collection("chats").document(messageData["messageId"] as String)
+            .set(messageData)
             .addOnSuccessListener {
                 binding.messageInput.text.clear()
                 binding.sendButton.isEnabled = true
@@ -416,8 +417,8 @@ class ChatActivity : AppCompatActivity() {
             .collection("tasks").document(taskId)
             .collection("chats").document(chat.messageId)
             .update(mapOf(
-                "content" to "",
-                "isDeleted" to true
+                "content" to chat.content,
+                "isDeleted" to true  // Must match the @PropertyName("isDeleted") in Chat class
             ))
             .addOnSuccessListener {
                 showToast("Message deleted")
