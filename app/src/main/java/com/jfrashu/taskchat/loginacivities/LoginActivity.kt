@@ -14,14 +14,21 @@ import com.jfrashu.taskchat.databinding.ActivityLoginBinding
 import com.jfrashu.taskchat.registeractivities.RegisterStep1Activity
 import android.content.SharedPreferences
 import androidx.appcompat.app.AlertDialog
+import com.jfrashu.taskchat.TokenManager
 import com.jfrashu.taskchat.groupactivities.GroupActivity
 import com.jfrashu.taskchat.network.NetworkUtils
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 class LoginActivity : AppCompatActivity() {
     private lateinit var binding: ActivityLoginBinding
     private lateinit var auth: FirebaseAuth
     private lateinit var db: FirebaseFirestore
     private lateinit var sharedPreferences: SharedPreferences
+
+    private lateinit var tokenManager: TokenManager
+    private val activityScope = CoroutineScope(Dispatchers.Main)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -34,6 +41,7 @@ class LoginActivity : AppCompatActivity() {
 
         // Initialize SharedPreferences
         sharedPreferences = getSharedPreferences("login_prefs", MODE_PRIVATE)
+        tokenManager = TokenManager()
 
         setupTextWatchers()
         setupClickListeners()
@@ -180,6 +188,10 @@ class LoginActivity : AppCompatActivity() {
                 saveCredentialsIfRequested(binding.emailField.text.toString().trim(),
                     binding.passwordField.text.toString())
                 updateUserStatus(user.uid, "online")
+
+                activityScope.launch {
+                    tokenManager.initializeToken()
+                }
                 showToast("You Have Successfully Logged In")
                 startActivity(Intent(this, GroupActivity::class.java))
                 finish()

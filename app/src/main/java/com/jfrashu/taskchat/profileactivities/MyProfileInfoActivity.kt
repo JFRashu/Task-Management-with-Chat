@@ -21,6 +21,10 @@ import com.jfrashu.taskchat.WelcomeActivity
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.firebase.auth.EmailAuthProvider
 import com.google.firebase.auth.FirebaseAuthInvalidUserException
+import com.jfrashu.taskchat.TokenManager
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 class MyProfileInfoActivity : AppCompatActivity() {
     private lateinit var displayNameInput: TextInputEditText
@@ -30,6 +34,9 @@ class MyProfileInfoActivity : AppCompatActivity() {
     private lateinit var saveFab: ExtendedFloatingActionButton
     private lateinit var logoutButton: MaterialButton
     private lateinit var auth: FirebaseAuth
+
+    private lateinit var tokenManager: TokenManager
+    private val activityScope = CoroutineScope(Dispatchers.Main)
 
     private lateinit var changePasswordButton: MaterialButton
 
@@ -42,6 +49,8 @@ class MyProfileInfoActivity : AppCompatActivity() {
         setContentView(R.layout.activity_my_profile_info)
 
         auth = FirebaseAuth.getInstance()
+        tokenManager = TokenManager()
+
         initializeViews()
         loadUserData()
         setupSaveButton()
@@ -241,7 +250,11 @@ class MyProfileInfoActivity : AppCompatActivity() {
         logoutButton.text = "Logout" // Fix the button text
         logoutButton.setOnClickListener {
             updateUserStatus("offline")
-            auth.signOut()
+            activityScope.launch {
+                tokenManager.deleteToken()
+                auth.signOut()
+            }
+
             clearUserSession()
             navigateToWelcome()
         }
