@@ -108,6 +108,7 @@ class GroupChatActivity : AppCompatActivity() {
             .document(groupId)
             .collection("groupchat")
             .orderBy("timestamp", Query.Direction.DESCENDING)
+            .whereEqualTo("isDeleted", false)
             .whereLessThan("timestamp", lastLoadedMessageTimestamp!!)
             .limit(MESSAGES_PER_PAGE.toLong())
 
@@ -170,6 +171,7 @@ class GroupChatActivity : AppCompatActivity() {
         val initialQuery = db.collection("groups")
             .document(groupId)
             .collection("groupchat")
+            .whereEqualTo("isDeleted", false)
             .orderBy("timestamp", Query.Direction.DESCENDING)
             .limit(MESSAGES_PER_PAGE.toLong())
 
@@ -190,6 +192,7 @@ class GroupChatActivity : AppCompatActivity() {
         val query = db.collection("groups")
             .document(groupId)
             .collection("groupchat")
+            .whereEqualTo("isDeleted", false)
             .orderBy("timestamp", Query.Direction.DESCENDING)
 
         snapshotListener = query.addSnapshotListener { snapshot, error ->
@@ -207,19 +210,19 @@ class GroupChatActivity : AppCompatActivity() {
         }
     }
 
-    private fun sendMessage(type: String = "text", attachmentUrl: String = "") {
+    private fun sendMessage(type: String = "text") {
         val messageText = binding.messageInput.text.toString().trim()
-        if (messageText.isEmpty() && attachmentUrl.isEmpty()) return
+        if (messageText.isEmpty()) return
 
-        val message = GroupChat(
-            messageId = UUID.randomUUID().toString(),
-            groupId = groupId,
-            senderId = currentUserId,
-            content = messageText,
-            timestamp = System.currentTimeMillis(),
-            type = type,
-            attachmentUrl = attachmentUrl,
-            isDeleted = false
+        val messageData = mapOf(
+            "messageId" to UUID.randomUUID().toString(),
+            "groupId" to groupId,
+            "senderId" to currentUserId,
+            "content" to messageText,
+            "timestamp" to System.currentTimeMillis(),
+            "type" to type,
+            "attachmentUrl" to "",
+            "isDeleted" to false
         )
 
         binding.sendButton.isEnabled = false
@@ -227,8 +230,8 @@ class GroupChatActivity : AppCompatActivity() {
         db.collection("groups")
             .document(groupId)
             .collection("groupchat")
-            .document(message.messageId)
-            .set(message)
+            .document(messageData["messageId"] as String)
+            .set(messageData)
             .addOnSuccessListener {
                 binding.messageInput.text.clear()
                 binding.sendButton.isEnabled = true
@@ -318,12 +321,16 @@ class GroupChatActivity : AppCompatActivity() {
                     .document(groupId)
                     .collection("groupchat")
                     .document(chat.messageId)
-                    .update(
-                        mapOf(
-                            "isDeleted" to true,
-                            "content" to ""
-                        )
-                    )
+                    .set(mapOf(
+                        "messageId" to chat.messageId,
+                        "groupId" to chat.groupId,
+                        "senderId" to chat.senderId,
+                        "content" to "",
+                        "timestamp" to chat.timestamp,
+                        "type" to chat.type,
+                        "attachmentUrl" to "",
+                        "isDeleted" to true
+                    ))
                     .addOnFailureListener { e ->
                         showToast("Failed to mark message as deleted: ${e.message}")
                     }

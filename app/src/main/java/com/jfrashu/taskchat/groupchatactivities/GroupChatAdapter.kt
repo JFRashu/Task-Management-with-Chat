@@ -108,6 +108,27 @@ class GroupChatAdapter(
                 setupSenderMessage(chat)
             }
         }
+        private fun formatTimestamp(timestamp: Long): String {
+            val date = Date(timestamp)
+            val timeFormat = SimpleDateFormat("h:mm a", Locale.getDefault())
+            val dateFormat = SimpleDateFormat("d MMM yy", Locale.getDefault())
+
+            val timePart = timeFormat.format(date)
+            val datePart = dateFormat.format(date)
+
+            // Extract day and add the correct suffix
+            val day = datePart.split(" ")[0].toInt()
+            val suffix = when {
+                day in 11..13 -> "th"
+                day % 10 == 1 -> "st"
+                day % 10 == 2 -> "nd"
+                day % 10 == 3 -> "rd"
+                else -> "th"
+            }
+
+            val formattedDate = datePart.replaceFirst("$day", "$day$suffix")
+            return "$timePart $formattedDate"
+        }
 
         private fun setupSenderMessage(chat: GroupChat) {
             binding.apply {
@@ -125,7 +146,7 @@ class GroupChatAdapter(
                 } else {
                     applySenderMessageStyle(chat)
                 }
-                senderTimestamp.text = dateFormatter.format(Date(chat.timestamp))
+                senderTimestamp.text = formatTimestamp(chat.timestamp)
             }
         }
 
@@ -145,7 +166,7 @@ class GroupChatAdapter(
                 } else {
                     applyReceiverMessageStyle(chat)
                 }
-                receiverTimestamp.text = dateFormatter.format(Date(chat.timestamp))
+                receiverTimestamp.text = formatTimestamp(chat.timestamp)
             }
         }
 
