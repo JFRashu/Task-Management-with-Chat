@@ -34,7 +34,7 @@ SAT.R a TaskChatting App serves as a practical implementation of modern Android 
 ### Task Management & Communication
 <p align="center">
 <img src="Screentshots/TaskActivityUpdated.jpg" width="300" height="600" alt="Task List"/>
-<img src="Screentshots/TaskInfoUpdated.jpg" width="300" height="600" alt="Task Information"/>
+<img src="Screentshots/TaskInfoUpdated2.jpg" width="300" height="600" alt="Task Information"/>
 <img src="Screentshots/CreateTask.jpg" width="300" height="600" alt="Create New Task"/>
 <img src="Screentshots/Chat_box_changed.jpg" width="300" height="600" alt="Task Chat Box"/>
 <img src="Screentshots/ChatOptions.jpg" width="300" height="600" alt="Task Chat Box Options"/>
