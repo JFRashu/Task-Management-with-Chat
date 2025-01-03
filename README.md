@@ -28,14 +28,16 @@ SAT.R a TaskChatting App serves as a practical implementation of modern Android 
 <img src="Screentshots/GroupInvitation.jpg" width="300" height="600" alt="Group Invitation"/>
 <img src="Screentshots/CreateGroup.jpg" width="300" height="600" alt="Create New Group"/>
 <img src="Screentshots/AddMember.jpg" width="300" height="600" alt="Add new member to exiting Group"/>
+<img src="Screentshots/GroupChat.jpg" width="300" height="600" alt="Common Group Chat"/>
 </p>
 
 ### Task Management & Communication
 <p align="center">
 <img src="Screentshots/TaskActivityUpdated.jpg" width="300" height="600" alt="Task List"/>
-<img src="Screentshots/TaskAInfo.jpg" width="300" height="600" alt="Task Information"/>
+<img src="Screentshots/TaskInfoUpdated.jpg" width="300" height="600" alt="Task Information"/>
 <img src="Screentshots/CreateTask.jpg" width="300" height="600" alt="Create New Task"/>
 <img src="Screentshots/Chat_box_changed.jpg" width="300" height="600" alt="Task Chat Box"/>
+<img src="Screentshots/ChatOptions.jpg" width="300" height="600" alt="Task Chat Box Options"/>
 </p>
 
 ## Features
@@ -47,14 +49,22 @@ SAT.R a TaskChatting App serves as a practical implementation of modern Android 
     - Secure login system
 
 - **Group Management**:
-    - Create and manage groups
+    - Create and manage groups (Update & Deletion)
     - Send and receive group invitations
     - View group information and members
+    - Add new member to an exiting group
+    - Associated with a common Chatbox for each group b
+    - Send ,delete ,copy ,edit message
+    - Search groups
 
 - **Task Management**:
     - Admin-controlled task creation
+    - Manage Task (Update & Deletion)
     - Task status tracking (Pending, In Progress, Completed)
     - Task information viewing
+    - Associated with a Chatbox
+    - Send ,delete ,copy ,edit message
+    - Search tasks
 
 - **Communication**:
     - Real-time chat functionality within tasks
