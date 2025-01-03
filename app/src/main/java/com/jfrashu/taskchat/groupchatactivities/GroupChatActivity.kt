@@ -1,6 +1,9 @@
 // GroupChatActivity.kt
 package com.jfrashu.taskchat.groupchatactivities
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.text.Editable
@@ -20,6 +23,7 @@ import com.google.firebase.firestore.Query
 import com.jfrashu.taskchat.R
 import com.jfrashu.taskchat.databinding.ActivityChatBinding
 import com.jfrashu.taskchat.databinding.ActivityGroupChatBinding
+import com.jfrashu.taskchat.dataclasses.Chat
 import com.jfrashu.taskchat.dataclasses.GroupChat
 import com.jfrashu.taskchat.taskactivities.TaskInfoActivity
 import java.util.UUID
@@ -271,16 +275,23 @@ class GroupChatActivity : AppCompatActivity() {
     private fun showMessageOptionsDialog(chat: GroupChat) {
         if (chat.senderId != currentUserId) return
 
-        val options = arrayOf("Edit Message", "Mark as Deleted")
+        val options = arrayOf("Edit Message", "Mark as Deleted","Copy Message")
         AlertDialog.Builder(this)
             .setTitle("Message Options")
             .setItems(options) { _, which ->
                 when (which) {
                     0 -> editMessage(chat)
                     1 -> markMessageAsDeleted(chat)
+                    2 -> copyMessageToClipboard(chat)
                 }
             }
             .show()
+    }
+    private fun copyMessageToClipboard(chat: GroupChat) {
+        val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+        val clip = ClipData.newPlainText("Message", chat.content)
+        clipboard.setPrimaryClip(clip)
+        showToast("Message copied to clipboard")
     }
 
     private fun editMessage(chat: GroupChat) {

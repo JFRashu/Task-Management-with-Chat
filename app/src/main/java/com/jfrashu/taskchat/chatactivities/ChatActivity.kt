@@ -15,6 +15,7 @@ import android.os.Environment
 import android.text.Editable
 import android.text.TextWatcher
 import android.util.Log
+import android.view.View
 import android.widget.ImageButton
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -40,6 +41,9 @@ class ChatActivity : AppCompatActivity() {
     private var groupId: String = ""
     private var taskStatus: String = ""
     private var snapshotListener: ListenerRegistration? = null
+    private var lastLoadedMessageTimestamp: Long? = null
+    private var isLoadingMore = false
+    private var allMessagesLoaded = false
 
     private val currentUserId: String
         get() = FirebaseAuth.getInstance().currentUser?.uid ?: ""
@@ -47,13 +51,8 @@ class ChatActivity : AppCompatActivity() {
     private val db = FirebaseFirestore.getInstance()
 
     companion object {
-        private const val STORAGE_PERMISSION_CODE = 101
         private const val MESSAGES_PER_PAGE = 50
     }
-
-    private var lastLoadedMessageTimestamp: Long? = null
-    private var isLoadingMore = false
-    private var allMessagesLoaded = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -74,161 +73,8 @@ class ChatActivity : AppCompatActivity() {
         checkTaskAccess()
     }
 
-    private fun setupMessageListener() {
-        if (isFinishing || isDestroyed) return
-
-        // Initial query to get the most recent messages
-        val initialQuery = db.collection("groups")
-            .document(groupId)
-            .collection("tasks")
-            .document(taskId)
-            .collection("chats")
-            .whereEqualTo("isDeleted", false)
-            .orderBy("timestamp", Query.Direction.DESCENDING)
-            .limit(MESSAGES_PER_PAGE.toLong())
-
-        initialQuery.get().addOnSuccessListener { snapshot ->
-            if (isFinishing || isDestroyed) return@addOnSuccessListener
-
-            if (!snapshot.isEmpty) {
-                lastLoadedMessageTimestamp = snapshot.documents.last().getLong("timestamp")
-            }
-
-            // Set up real-time listener for new messages
-            setupRealtimeUpdates()
-
-        }.addOnFailureListener { e ->
-            if (isFinishing || isDestroyed) return@addOnFailureListener
-            Log.e("ChatActivity", "Error loading initial messages", e)
-            showToast("Error loading messages: ${e.message}")
-        }
-    }
-
-    private fun setupRealtimeUpdates() {
-        if (isFinishing || isDestroyed) return
-
-        val realtimeQuery = db.collection("groups")
-            .document(groupId)
-            .collection("tasks")
-            .document(taskId)
-            .collection("chats")
-            .whereEqualTo("isDeleted", false)
-            .orderBy("timestamp", Query.Direction.ASCENDING)
-            .apply {
-                lastLoadedMessageTimestamp?.let {
-                    startAfter(it)
-                }
-            }
-
-        snapshotListener = realtimeQuery.addSnapshotListener { snapshot, error ->
-            if (isFinishing || isDestroyed) return@addSnapshotListener
-
-            if (error != null) {
-                Log.e("ChatActivity", "Listen failed: ${error.message}", error)
-                showToast("Error loading messages: ${error.message}")
-                return@addSnapshotListener
-            }
-
-            snapshot?.let { querySnapshot ->
-                val newMessages = querySnapshot.documents.mapNotNull { doc ->
-                    doc.toObject(Chat::class.java)
-                }
-
-                updateMessageList(newMessages)
-            }
-        }
-
-        // Setup scroll listener for pagination
-        recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
-            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
-                super.onScrolled(recyclerView, dx, dy)
-
-                if (isLoadingMore || allMessagesLoaded) return
-
-                val layoutManager = recyclerView.layoutManager as LinearLayoutManager
-                val firstVisibleItem = layoutManager.findFirstVisibleItemPosition()
-
-                if (firstVisibleItem <= 5) {
-                    loadMoreMessages()
-                }
-            }
-        })
-    }
-
-    private fun loadMoreMessages() {
-        if (isLoadingMore || allMessagesLoaded || lastLoadedMessageTimestamp == null) return
-        isLoadingMore = true
-
-        val oldMessagesQuery = db.collection("groups")
-            .document(groupId)
-            .collection("tasks")
-            .document(taskId)
-            .collection("chats")
-            .whereEqualTo("isDeleted", false) // Exclude deleted messages
-            .orderBy("timestamp", Query.Direction.DESCENDING)
-            .whereLessThan("timestamp", lastLoadedMessageTimestamp!!)
-            .limit(MESSAGES_PER_PAGE.toLong())
-
-        oldMessagesQuery.get().addOnSuccessListener { snapshot ->
-            if (isFinishing || isDestroyed) return@addOnSuccessListener
-
-            if (snapshot.isEmpty) {
-                allMessagesLoaded = true
-            } else {
-                val oldMessages = snapshot.documents.mapNotNull { doc ->
-                    doc.toObject(Chat::class.java)
-                }
-
-                lastLoadedMessageTimestamp = snapshot.documents.last().getLong("timestamp")
-                updateMessageList(oldMessages, prepend = true)
-            }
-            isLoadingMore = false
-
-        }.addOnFailureListener { e ->
-            if (isFinishing || isDestroyed) return@addOnFailureListener
-            Log.e("ChatActivity", "Error loading more messages", e)
-            isLoadingMore = false
-        }
-    }
-
-    private fun updateMessageList(newMessages: List<Chat>, prepend: Boolean = false) {
-        val currentList = adapter.currentList.toMutableList()
-
-        if (prepend) {
-            // Remove duplicates and add new messages at the beginning
-            val uniqueMessages = newMessages.filterNot { new ->
-                currentList.any { existing -> existing.messageId == new.messageId }
-            }
-            currentList.addAll(0, uniqueMessages)
-        } else {
-            // Remove duplicates and add new messages at the end
-            val uniqueMessages = newMessages.filterNot { new ->
-                currentList.any { existing -> existing.messageId == new.messageId }
-            }
-            currentList.addAll(uniqueMessages)
-        }
-
-        // Sort messages by timestamp
-        val sortedList = currentList.sortedBy { it.timestamp }
-
-        adapter.submitList(sortedList) {
-            if (!prepend && sortedList.isNotEmpty()) {
-                val layoutManager = recyclerView.layoutManager as LinearLayoutManager
-                val lastVisibleItem = layoutManager.findLastVisibleItemPosition()
-                val totalItems = layoutManager.itemCount
-                val isNearBottom = totalItems - lastVisibleItem <= 3
-
-                if (isNearBottom) {
-                    recyclerView.post {
-                        recyclerView.smoothScrollToPosition(sortedList.size - 1)
-                    }
-                }
-            }
-        }
-    }
-
     private fun setupUI() {
-        recyclerView = findViewById(R.id.chatRecyclerView)
+        recyclerView = binding.chatRecyclerView
         adapter = ChatAdapter(
             currentUserId = currentUserId,
             onMessageLongClick = { chat -> showMessageOptionsDialog(chat) }
@@ -251,22 +97,124 @@ class ChatActivity : AppCompatActivity() {
             override fun afterTextChanged(s: Editable?) {}
         })
 
-        binding.backButton.setOnClickListener { onBackPressed() }
         binding.sendButton.setOnClickListener { sendMessage() }
+        setupScrollListener()
     }
 
+    private fun setupScrollListener() {
+        recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                super.onScrolled(recyclerView, dx, dy)
 
+                if (!isLoadingMore && !allMessagesLoaded) {
+                    val layoutManager = recyclerView.layoutManager as LinearLayoutManager
+                    val firstVisibleItem = layoutManager.findFirstVisibleItemPosition()
 
-    private fun loadMoreMessages(query: Query) {
-        query.limit(MESSAGES_PER_PAGE.toLong()).get()
-            .addOnSuccessListener { documents ->
-                val oldMessages = documents.toObjects(Chat::class.java)
-                val currentList = adapter.currentList.toMutableList()
-                currentList.addAll(0, oldMessages)
-                adapter.submitList(currentList)
+                    if (firstVisibleItem <= 5) {
+                        loadMoreMessages()
+                    }
+                }
+            }
+        })
+    }
+
+    private fun setupMessageListener() {
+        val initialQuery = db.collection("groups")
+            .document(groupId)
+            .collection("tasks")
+            .document(taskId)
+            .collection("chats")
+            .whereEqualTo("isDeleted", false)
+            .orderBy("timestamp", Query.Direction.DESCENDING)
+            .limit(MESSAGES_PER_PAGE.toLong())
+
+        initialQuery.get().addOnSuccessListener { snapshot ->
+            if (!snapshot.isEmpty) {
+                lastLoadedMessageTimestamp = snapshot.documents.last().getLong("timestamp")
+                val messages = snapshot.toObjects(Chat::class.java)
+                adapter.submitList(messages.reversed())
+            }
+            setupRealtimeUpdates()
+        }.addOnFailureListener { e ->
+            Log.e("ChatActivity", "Error loading initial messages", e)
+            showToast("Error loading messages: ${e.message}")
+        }
+    }
+
+    private fun setupRealtimeUpdates() {
+        val query = db.collection("groups")
+            .document(groupId)
+            .collection("tasks")
+            .document(taskId)
+            .collection("chats")
+            .whereEqualTo("isDeleted", false)
+            .orderBy("timestamp", Query.Direction.DESCENDING)
+
+        snapshotListener = query.addSnapshotListener { snapshot, error ->
+            if (error != null) {
+                Log.e("ChatActivity", "Listen failed", error)
+                return@addSnapshotListener
+            }
+
+            snapshot?.let { querySnapshot ->
+                val messages = querySnapshot.toObjects(Chat::class.java)
+                adapter.submitList(messages.reversed()) {
+                    // Only scroll to bottom if we're already near the bottom
+                    val layoutManager = recyclerView.layoutManager as LinearLayoutManager
+                    val lastVisibleItem = layoutManager.findLastVisibleItemPosition()
+                    val totalItems = layoutManager.itemCount
+                    if (lastVisibleItem >= totalItems - 3) {
+                        recyclerView.scrollToPosition(messages.size - 1)
+                    }
+                }
+            }
+        }
+    }
+
+    private fun loadMoreMessages() {
+        if (isLoadingMore || allMessagesLoaded || lastLoadedMessageTimestamp == null) {
+            return
+        }
+
+        isLoadingMore = true
+        binding.loadingProgressBar?.visibility = View.VISIBLE
+
+        val query = db.collection("groups")
+            .document(groupId)
+            .collection("tasks")
+            .document(taskId)
+            .collection("chats")
+            .whereEqualTo("isDeleted", false)
+            .orderBy("timestamp", Query.Direction.DESCENDING)
+            .whereLessThan("timestamp", lastLoadedMessageTimestamp!!)
+            .limit(MESSAGES_PER_PAGE.toLong())
+
+        query.get()
+            .addOnSuccessListener { snapshot ->
+                if (snapshot.isEmpty) {
+                    allMessagesLoaded = true
+                    showToast("No more messages to load")
+                } else {
+                    val oldMessages = snapshot.toObjects(Chat::class.java)
+                    lastLoadedMessageTimestamp = snapshot.documents.last().getLong("timestamp")
+
+                    val currentList = adapter.currentList.toMutableList()
+                    currentList.addAll(0, oldMessages)
+
+                    val scrollPosition = oldMessages.size
+                    adapter.submitList(currentList) {
+                        val layoutManager = recyclerView.layoutManager as LinearLayoutManager
+                        layoutManager.scrollToPositionWithOffset(scrollPosition, 0)
+                    }
+                }
             }
             .addOnFailureListener { e ->
                 Log.e("ChatActivity", "Error loading more messages", e)
+                showToast("Failed to load more messages: ${e.message}")
+            }
+            .addOnCompleteListener {
+                isLoadingMore = false
+                binding.loadingProgressBar?.visibility = View.GONE
             }
     }
 
@@ -279,15 +227,10 @@ class ChatActivity : AppCompatActivity() {
         val messageText = binding.messageInput.text.toString().trim()
         if (messageText.isEmpty()) return
 
-        val currentUser = FirebaseAuth.getInstance().currentUser ?: run {
-            showToast("Please sign in to send messages")
-            return
-        }
-
         val messageData = mapOf(
             "messageId" to UUID.randomUUID().toString(),
             "taskId" to taskId,
-            "senderId" to currentUser.uid,
+            "senderId" to currentUserId,
             "content" to messageText,
             "timestamp" to System.currentTimeMillis(),
             "type" to type,
@@ -297,9 +240,12 @@ class ChatActivity : AppCompatActivity() {
 
         binding.sendButton.isEnabled = false
 
-        db.collection("groups").document(groupId)
-            .collection("tasks").document(taskId)
-            .collection("chats").document(messageData["messageId"] as String)
+        db.collection("groups")
+            .document(groupId)
+            .collection("tasks")
+            .document(taskId)
+            .collection("chats")
+            .document(messageData["messageId"] as String)
             .set(messageData)
             .addOnSuccessListener {
                 binding.messageInput.text.clear()
@@ -307,9 +253,107 @@ class ChatActivity : AppCompatActivity() {
             }
             .addOnFailureListener { e ->
                 showToast("Failed to send message: ${e.message}")
-                Log.e("ChatActivity", "Error sending message", e)
                 binding.sendButton.isEnabled = true
             }
+    }
+
+    private fun editMessage(chat: Chat) {
+        val editText = android.widget.EditText(this).apply {
+            setText(chat.content)
+        }
+
+        AlertDialog.Builder(this)
+            .setTitle("Edit Message")
+            .setView(editText)
+            .setPositiveButton("Save") { _, _ ->
+                val newContent = editText.text.toString().trim()
+                if (newContent.isNotEmpty()) {
+                    updateMessage(chat.messageId, newContent)
+                }
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    private fun updateMessage(messageId: String, newContent: String) {
+        db.collection("groups")
+            .document(groupId)
+            .collection("tasks")
+            .document(taskId)
+            .collection("chats")
+            .document(messageId)
+            .update("content", newContent)
+            .addOnFailureListener { e ->
+                showToast("Failed to update message: ${e.message}")
+            }
+    }
+
+    private fun deleteMessage(chat: Chat) {
+        val currentUser = FirebaseAuth.getInstance().currentUser ?: run {
+            showToast("Please sign in to delete messages")
+            return
+        }
+
+        if (chat.senderId != currentUser.uid) {
+            showToast("You cannot delete other users' messages")
+            return
+        }
+
+        db.collection("groups")
+            .document(groupId)
+            .collection("tasks")
+            .document(taskId)
+            .collection("chats")
+            .document(chat.messageId)
+            .update(mapOf(
+                "content" to chat.content,
+                "isDeleted" to true
+            ))
+            .addOnSuccessListener {
+                showToast("Message deleted")
+            }
+            .addOnFailureListener { e ->
+                showToast("Failed to delete message: ${e.message}")
+            }
+    }
+
+    private fun showMessageOptionsDialog(chat: Chat) {
+        val isMyMessage = chat.senderId == currentUserId
+        val options = ArrayList<String>().apply {
+            add("Copy")
+            if (isMyMessage && taskStatus != "completed") {
+                add("Delete")
+                add("Edit")
+            }
+        }
+
+        AlertDialog.Builder(this)
+            .setTitle("Message Options")
+            .setItems(options.toTypedArray()) { _, which ->
+                when (options[which]) {
+                    "Copy" -> copyMessageToClipboard(chat)
+                    "Delete" -> confirmDeleteMessage(chat)
+                    "Edit" -> editMessage(chat)
+                }
+            }
+            .setNegativeButton("Cancel") { dialog, _ -> dialog.dismiss() }
+            .show()
+    }
+
+    private fun copyMessageToClipboard(chat: Chat) {
+        val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+        val clip = ClipData.newPlainText("Message", chat.content)
+        clipboard.setPrimaryClip(clip)
+        showToast("Message copied to clipboard")
+    }
+
+    private fun confirmDeleteMessage(chat: Chat) {
+        AlertDialog.Builder(this)
+            .setTitle("Delete Message")
+            .setMessage("Are you sure you want to delete this message?")
+            .setPositiveButton("Delete") { _, _ -> deleteMessage(chat) }
+            .setNegativeButton("Cancel", null)
+            .show()
     }
 
     private fun checkTaskAccess() {
@@ -357,81 +401,8 @@ class ChatActivity : AppCompatActivity() {
             }
     }
 
-    private fun disableInput(hint: String) {
-        binding.messageInput.isEnabled = false
-        binding.sendButton.isEnabled = false
-        binding.messageInput.hint = hint
-        showToast(hint)
-    }
-
-    private fun showMessageOptionsDialog(chat: Chat) {
-        val isMyMessage = chat.senderId == currentUserId
-        val options = ArrayList<String>().apply {
-            add("Copy")
-            if (isMyMessage && taskStatus != "completed") {
-                add("Delete")
-            }
-        }
-
-        AlertDialog.Builder(this, R.style.AlertDialogTheme)
-            .setTitle("Message Options")
-            .setItems(options.toTypedArray()) { _, which ->
-                when (options[which]) {
-                    "Copy" -> copyMessageToClipboard(chat)
-                    "Delete" -> confirmDeleteMessage(chat)
-                }
-            }
-            .setNegativeButton("Cancel") { dialog, _ -> dialog.dismiss() }
-            .create()
-            .show()
-    }
-
-    private fun copyMessageToClipboard(chat: Chat) {
-        val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-        val clip = ClipData.newPlainText("Message", chat.content)
-        clipboard.setPrimaryClip(clip)
-        showToast("Message copied to clipboard")
-    }
-
-    private fun confirmDeleteMessage(chat: Chat) {
-        AlertDialog.Builder(this, R.style.AlertDialogTheme)
-            .setTitle("Delete Message")
-            .setMessage("Are you sure you want to delete this message?")
-            .setPositiveButton("Delete") { _, _ -> deleteMessage(chat) }
-            .setNegativeButton("Cancel", null)
-            .show()
-    }
-
-    private fun deleteMessage(chat: Chat) {
-        val currentUser = FirebaseAuth.getInstance().currentUser ?: run {
-            showToast("Please sign in to delete messages")
-            return
-        }
-
-        if (chat.senderId != currentUser.uid) {
-            showToast("You cannot delete other users' messages")
-            return
-        }
-
-        db.collection("groups").document(groupId)
-            .collection("tasks").document(taskId)
-            .collection("chats").document(chat.messageId)
-            .update(mapOf(
-                "content" to chat.content,
-                "isDeleted" to true  // Must match the @PropertyName("isDeleted") in Chat class
-            ))
-            .addOnSuccessListener {
-                showToast("Message deleted")
-
-            }
-            .addOnFailureListener { e ->
-                showToast("Failed to delete message: ${e.message}")
-                Log.e("ChatActivity", "Error deleting message", e)
-            }
-    }
-
     private fun setupBackButton() {
-        findViewById<ImageButton>(R.id.backButton).setOnClickListener {
+        binding.backButton.setOnClickListener {
             val intent = Intent(this, TaskInfoActivity::class.java).apply {
                 putExtra("groupId", groupId)
                 putExtra("taskId", taskId)
@@ -439,6 +410,13 @@ class ChatActivity : AppCompatActivity() {
             startActivity(intent)
             finish()
         }
+    }
+
+    private fun disableInput(hint: String) {
+        binding.messageInput.isEnabled = false
+        binding.sendButton.isEnabled = false
+        binding.messageInput.hint = hint
+        showToast(hint)
     }
 
     private fun showToast(message: String) {
