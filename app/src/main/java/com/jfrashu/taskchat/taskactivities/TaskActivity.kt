@@ -14,14 +14,17 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import com.google.android.material.progressindicator.CircularProgressIndicator
 import com.google.android.material.search.SearchBar
 import com.google.android.material.search.SearchView
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.Query
+import com.google.firebase.firestore.ktx.toObject
 import com.jfrashu.taskchat.R
 import com.jfrashu.taskchat.chatactivities.ChatActivity
+import com.jfrashu.taskchat.dataclasses.Group
 import com.jfrashu.taskchat.dataclasses.Task
 import com.jfrashu.taskchat.groupactivities.GroupInfoActivity
 import com.jfrashu.taskchat.groupchatactivities.GroupChatActivity
@@ -38,6 +41,7 @@ class TaskActivity : AppCompatActivity() {
     private var groupId: String? = null
     private var groupName: String? = null
     private var groupDescription: String? = null
+    private lateinit var progressIndicator: CircularProgressIndicator
 
     private var isAdmin: Boolean = false
     private var currentUserId: String? = null
@@ -57,6 +61,7 @@ class TaskActivity : AppCompatActivity() {
         groupName = intent.getStringExtra("groupName")
         isAdmin = intent.getBooleanExtra("isAdmin", false)
         groupDescription = intent.getStringExtra("groupDescription")
+        progressIndicator = findViewById(R.id.progressIndicator)
 
 
         if (groupId == null || currentUserId == null) {
@@ -219,35 +224,61 @@ class TaskActivity : AppCompatActivity() {
     }
 
     private fun fetchTasks() {
+        progressIndicator.isVisible = true
         snapshotListener?.remove()
 
         groupId?.let { gId ->
             snapshotListener = db.collection("groups").document(gId)
                 .collection("tasks")
-                .whereEqualTo("isDeleted", false)
                 .orderBy("lastActivity", Query.Direction.DESCENDING)
                 .addSnapshotListener { snapshot, e ->
                     if (!isFinishing && !isDestroyed) {
+                        progressIndicator.isVisible = false
                         if (e != null) {
+                            Log.e("TaskFetch", "Error fetching tasks", e)
                             showToast("Error fetching tasks: ${e.message}")
                             return@addSnapshotListener
                         }
 
-                        allTasks = snapshot?.documents?.mapNotNull { doc ->
-                            doc.toObject(Task::class.java)?.copy(taskId = doc.id)
-                        } ?: emptyList()
+                        try {
+                            val processedTasks = mutableListOf<Task>()
+                            snapshot?.documents?.forEach { doc ->
+                                try {
+                                    // First check the raw isDeleted value
+                                    val rawIsDeleted = doc.getBoolean("isDeleted") ?: false
+                                    if (!rawIsDeleted) {
+                                        val task = doc.toObject<Task>()
+                                        if (task != null) {
+                                            processedTasks.add(task)
+                                            Log.d("TaskFetch", "Added task: ${task.taskId}, title: ${task.title}, isDeleted: ${task.isDeleted}")
+                                        }
+                                    } else {
+                                        Log.d("TaskFetch", "Skipped deleted task: ${doc.id}")
+                                    }
+                                } catch (docEx: Exception) {
+                                    Log.e("TaskFetch", "Error processing document: ${doc.id}", docEx)
+                                }
+                            }
 
-                        taskAdapter.updateTasks(allTasks)
+                            allTasks = processedTasks
+                            Log.d("TaskFetch", "Final tasks count: ${allTasks.size}")
+                            taskAdapter.updateTasks(allTasks)
 
-                        // Update search results if search is active
-                        if (searchView.isShowing) {
-                            val query = searchView.editText.text.toString()
-                            filterTasks(query)
+                            // Update search results if search is active
+                            if (searchView.isShowing) {
+                                val query = searchView.editText.text.toString()
+                                filterTasks(query)
+                            }
+                        } catch (ex: Exception) {
+                            Log.e("TaskFetch", "Error processing tasks", ex)
+                            showToast("Error processing tasks: ${ex.message}")
                         }
-
-                        Log.d("TaskActivity", "Fetched ${allTasks.size} tasks")
                     }
                 }
+        } ?: run {
+            Log.e("TaskFetch", "No group ID provided")
+            progressIndicator.isVisible = false
+            showToast("Unable to fetch tasks: No group selected")
         }
     }
 
