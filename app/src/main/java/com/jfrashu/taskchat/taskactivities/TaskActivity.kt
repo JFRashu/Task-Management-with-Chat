@@ -224,6 +224,7 @@ class TaskActivity : AppCompatActivity() {
         groupId?.let { gId ->
             snapshotListener = db.collection("groups").document(gId)
                 .collection("tasks")
+                .whereEqualTo("isDeleted", false)
                 .orderBy("lastActivity", Query.Direction.DESCENDING)
                 .addSnapshotListener { snapshot, e ->
                     if (!isFinishing && !isDestroyed) {

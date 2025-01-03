@@ -64,18 +64,24 @@ class CreateTaskActivity : AppCompatActivity() {
 
     private fun createTask(title: String, description: String) {
         val currentUser = auth.currentUser ?: return
+        val currentTime = System.currentTimeMillis()
+        val taskId = db.collection("groups").document(groupId).collection("tasks").document().id
 
-        val task = Task(
-            taskId = db.collection("groups").document(groupId).collection("tasks").document().id, // Generate ID within the group's tasks collection
-            groupId = groupId,
-            title = title,
-            description = description,
-            createdBy = currentUser.uid,
-            status = "pending"
+        val taskData = mapOf(
+            "taskId" to taskId,
+            "groupId" to groupId,
+            "title" to title,
+            "description" to description,
+            "createdBy" to currentUser.uid,
+            "status" to "pending",
+            "lastActivity" to currentTime,
+            "createdAt" to currentTime,
+            "lastMessage" to "",
+            "isDeleted" to false
         )
 
-        db.collection("groups").document(groupId).collection("tasks").document(task.taskId)
-            .set(task)
+        db.collection("groups").document(groupId).collection("tasks").document(taskId)
+            .set(taskData)
             .addOnSuccessListener {
                 Toast.makeText(this, "Task created successfully", Toast.LENGTH_SHORT).show()
                 finish()

@@ -133,6 +133,16 @@
 
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/deleteTaskButton"
+                style="@style/Widget.Material3.Button.TonalButton.Icon"
+                android:layout_width="180dp"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:text="Delete Task"
+                android:textColor="#B3261E"
+                app:icon="@drawable/baseline_delete_24"
+                app:iconTint="#B3261E" />
 
             <!-- Task Info -->
             <TextView

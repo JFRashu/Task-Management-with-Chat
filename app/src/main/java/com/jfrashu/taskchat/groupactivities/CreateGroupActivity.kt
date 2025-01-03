@@ -216,20 +216,23 @@ class CreateGroupActivity : AppCompatActivity() {
         binding.createButton.isEnabled = false
 
         val groupId = db.collection("groups").document().id
-        val group = Group(
-            groupId = groupId,
-            name = name,
-            description = description,
-            adminId = currentUserUid,
-            members = mutableListOf(currentUserUid),
-            tasks = listOf(),
-            createdAt = System.currentTimeMillis(),
-            lastActivity = System.currentTimeMillis()
+        val currentTime = System.currentTimeMillis()
+
+        val groupData = mapOf(
+            "groupId" to groupId,
+            "name" to name,
+            "description" to description,
+            "adminId" to currentUserUid,
+            "members" to listOf(currentUserUid),
+            "tasks" to listOf<String>(),
+            "createdAt" to currentTime,
+            "lastActivity" to currentTime,
+            "isDeleted" to false
         )
 
         Log.d(TAG, "Creating group with ID: $groupId")
         db.collection("groups").document(groupId)
-            .set(group)
+            .set(groupData)
             .addOnSuccessListener {
                 Log.d(TAG, "Group created successfully")
                 createInvitationsSequentially(groupId, selectedUsers.toSet())

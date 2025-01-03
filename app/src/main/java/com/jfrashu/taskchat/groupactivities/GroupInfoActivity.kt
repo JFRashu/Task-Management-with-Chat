@@ -255,8 +255,7 @@ class GroupInfoActivity : AppCompatActivity() {
                         val intent = Intent(this, GroupActivity::class.java)
                         // Clear all activities above it in the stack
                         intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or
-                                Intent.FLAG_ACTIVITY_NEW_TASK or
-                                Intent.FLAG_ACTIVITY_CLEAR_TASK
+                                Intent.FLAG_ACTIVITY_NEW_TASK
 
                         startActivity(intent)
                         finish() // Finish current activity
