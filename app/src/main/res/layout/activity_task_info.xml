@@ -61,6 +61,7 @@
                     <com.google.android.material.chip.ChipGroup
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+
                         android:layout_marginTop="8dp">
 
                         <com.google.android.material.chip.Chip
@@ -73,33 +74,44 @@
 
                     <com.google.android.material.button.MaterialButtonToggleGroup
                         android:id="@+id/statusToggleGroup"
-                        android:layout_width="wrap_content"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
+                        android:layout_marginLeft="0dp"
+                        android:layout_marginRight="0dp"
                         android:layout_marginTop="8dp">
 
                         <Button
                             android:id="@+id/pendingButton"
                             style="@style/Widget.Material3.Button.OutlinedButton"
-                            android:layout_width="wrap_content"
+                            android:layout_width="0dp"
                             android:layout_height="wrap_content"
-                            android:layout_marginHorizontal="3dp"
+                            android:layout_weight="1"
+                            android:textSize="12sp"
+
                             android:text="Pending" />
 
                         <Button
                             android:id="@+id/inProgressButton"
                             style="@style/Widget.Material3.Button.OutlinedButton"
-                            android:layout_width="wrap_content"
+                            android:layout_width="0dp"
+
                             android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:textSize="12sp"
+
                             android:text="In Progress" />
 
                         <Button
                             android:id="@+id/completedButton"
                             style="@style/Widget.Material3.Button.OutlinedButton"
-                            android:layout_width="wrap_content"
+                            android:layout_width="0dp"
+                            android:textSize="12sp"
                             android:layout_height="wrap_content"
-                            android:layout_marginHorizontal="3dp"
+                            android:layout_weight="1"
+
                             android:text="Completed" />
                     </com.google.android.material.button.MaterialButtonToggleGroup>
+
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
