@@ -129,14 +129,48 @@ class TaskInfoActivity : AppCompatActivity() {
             }
     }
 
+    private fun setupStatusToggle() {
+        // First set single selection mode
+        statusToggleGroup.isSingleSelection = true
+
+        // Remove any existing listeners to prevent duplicate calls
+        statusToggleGroup.clearOnButtonCheckedListeners()
+
+        statusToggleGroup.addOnButtonCheckedListener { group, checkedId, isChecked ->
+            // Only proceed if a button is being checked
+            if (isChecked) {
+                when (checkedId) {
+                    R.id.pendingButton -> {
+                        if (group.checkedButtonId == R.id.pendingButton) {
+                            updateTaskStatus("pending")
+                        }
+                    }
+                    R.id.inProgressButton -> {
+                        if (group.checkedButtonId == R.id.inProgressButton) {
+                            updateTaskStatus("in_progress")
+                        }
+                    }
+                    R.id.completedButton -> {
+                        if (group.checkedButtonId == R.id.completedButton) {
+                            updateTaskStatus("completed")
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     private fun updateUI(task: Task) {
         taskTitleText.text = task.title
         descriptionText.text = task.description
-        createdByText.text = "Created by: ${task.createdBy}" // This will be updated when user info is fetched
+        createdByText.text = "Created by: ${task.createdBy}"
         createdAtText.text = "Created: ${DateUtils.getRelativeTimeSpanString(task.createdAt)}"
 
-        // Update status chip and toggle
+        // Update status chip
         statusChip.text = task.status.replace("_", " ").replaceFirstChar { it.uppercase() }
+
+        // Clear existing selection and set new state
+        statusToggleGroup.clearChecked()
         when (task.status) {
             "pending" -> statusToggleGroup.check(R.id.pendingButton)
             "in_progress" -> statusToggleGroup.check(R.id.inProgressButton)
@@ -147,24 +181,42 @@ class TaskInfoActivity : AppCompatActivity() {
         deleteTaskButton.isVisible = currentUserId == task.createdBy
     }
 
+//    private fun updateUI(task: Task) {
+//        taskTitleText.text = task.title
+//        descriptionText.text = task.description
+//        createdByText.text = "Created by: ${task.createdBy}" // This will be updated when user info is fetched
+//        createdAtText.text = "Created: ${DateUtils.getRelativeTimeSpanString(task.createdAt)}"
+//
+//        // Update status chip and toggle
+//        statusChip.text = task.status.replace("_", " ").replaceFirstChar { it.uppercase() }
+//        when (task.status) {
+//            "pending" -> statusToggleGroup.check(R.id.pendingButton)
+//            "in_progress" -> statusToggleGroup.check(R.id.inProgressButton)
+//            "completed" -> statusToggleGroup.check(R.id.completedButton)
+//        }
+
+//        // Show delete button only if current user is the task creator
+//        deleteTaskButton.isVisible = currentUserId == task.createdBy
+//    }
+
 
     private fun setupToolbar() {
         toolbar.setNavigationOnClickListener { finish() }
     }
 
-    private fun setupStatusToggle() {
-        statusToggleGroup.addOnButtonCheckedListener { group, checkedId, isChecked ->
-            if (isChecked) {
-                val newStatus = when (checkedId) {
-                    R.id.pendingButton -> "pending"
-                    R.id.inProgressButton -> "in_progress"
-                    R.id.completedButton -> "completed"
-                    else -> return@addOnButtonCheckedListener
-                }
-                updateTaskStatus(newStatus)
-            }
-        }
-    }
+//    private fun setupStatusToggle() {
+//        statusToggleGroup.addOnButtonCheckedListener { group, checkedId, isChecked ->
+//            if (isChecked) {
+//                val newStatus = when (checkedId) {
+//                    R.id.pendingButton -> "pending"
+//                    R.id.inProgressButton -> "in_progress"
+//                    R.id.completedButton -> "completed"
+//                    else -> return@addOnButtonCheckedListener
+//                }
+//                updateTaskStatus(newStatus)
+//            }
+//        }
+//    }
 
     private fun loadTaskData(groupId: String, taskId: String) {
         FirebaseFirestore.getInstance()
