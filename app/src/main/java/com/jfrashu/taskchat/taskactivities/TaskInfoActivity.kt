@@ -100,15 +100,29 @@ class TaskInfoActivity : AppCompatActivity() {
             .addOnSuccessListener {
                 Toast.makeText(this, "Task deleted successfully", Toast.LENGTH_SHORT).show()
 
-                // Create new intent for TaskActivity
-                val intent = Intent(this, TaskActivity::class.java)
-                intent.putExtra("groupId", groupId)
-                // Clear all activities above it in the stack
-                intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or
-                        Intent.FLAG_ACTIVITY_NEW_TASK
-
-                startActivity(intent)
-                finish()
+                // First fetch the task data
+                FirebaseFirestore.getInstance()
+                    .collection("groups")
+                    .document(groupId)
+                    .get()
+                    .addOnSuccessListener { document ->
+                        // Create new intent for TaskActivity with all necessary extras
+                        val intent = Intent(this, TaskActivity::class.java).apply {
+                            putExtra("groupId", groupId)
+                            putExtra("groupName", document.getString("name"))
+                            putExtra("groupDescription", document.getString("description"))
+                            putExtra("groupLastActivity", document.getLong("lastActivity"))
+                            val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
+                            putExtra("isAdmin", currentUserId == document.getString("adminId"))
+                            // Clear all activities above it in the stack
+                            flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK
+                        }
+                        startActivity(intent)
+                        finish()
+                    }
+                    .addOnFailureListener { e ->
+                        Toast.makeText(this, "Error fetching group details: ${e.message}", Toast.LENGTH_SHORT).show()
+                    }
             }
             .addOnFailureListener { e ->
                 Toast.makeText(this, "Error deleting task: ${e.message}", Toast.LENGTH_SHORT).show()
