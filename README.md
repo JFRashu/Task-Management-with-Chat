@@ -6,6 +6,21 @@ A comprehensive task management and communication platform designed specifically
 
 SAT.R a TaskChatting App serves as a practical implementation of modern Android development practices, focusing on group collaboration and task management. This project was created while studying Computer Science and Engineering at Chittagong University of Engineering & Technology (CUET).
 
+## Technical Documentation
+
+### Authentication System
+For detailed information about our authentication implementation, please refer to the following documentation:
+- [Authentication System Documentation](Screentshots/Authentication_method.pdf)
+
+This documentation covers:
+- User registration flow
+- Login process
+- Firebase Authentication integration
+- Security measures
+- Error handling
+- Authentication state management
+
+
 ## Screenshots
 
 ### App Flow
