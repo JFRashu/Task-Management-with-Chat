@@ -10,7 +10,7 @@ SAT.R a TaskChatting App serves as a practical implementation of modern Android 
 
 Check out our application demo to see SAT.R in action:
 
-https://github.com/JFRashu/SAT.R/assets/demo-video.mp4
+https://drive.google.com/file/d/1k3T4bCJAd_c7BuX-9dTZSIQ7AaiDkyyB/view?usp=drive_link
 
 
 ### Authentication System
