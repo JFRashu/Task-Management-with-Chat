@@ -6,11 +6,11 @@ A comprehensive task management and communication platform designed specifically
 
 SAT.R a TaskChatting App serves as a practical implementation of modern Android development practices, focusing on group collaboration and task management. This project was created while studying Computer Science and Engineering at Chittagong University of Engineering & Technology (CUET).
 
-## Demo Video
+## 🎥 Demo  Video
 
 Check out our application demo to see SAT.R in action:
 
-- [👉 Click This Link](https://drive.google.com/file/d/1k3T4bCJAd_c7BuX-9dTZSIQ7AaiDkyyB/view?usp=drive_link)
+[Watch the demo video](https://drive.google.com/file/d/1k3T4bCJAd_c7BuX-9dTZSIQ7AaiDkyyB/view?usp=drive_link)
 
 
 ### Authentication System
