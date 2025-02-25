@@ -162,7 +162,6 @@ Special thanks to:
 ## Future Enhancements
 - Dark mode/Light mode theme configuration
 - File attachment support in chat
-- Advanced task filtering and search
 - Push notification system
 - Task deadline reminders
 - Performance analytics
