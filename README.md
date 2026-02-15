@@ -165,3 +165,5 @@ Special thanks to:
 - Push notification system
 - Task deadline reminders
 - Performance analytics
+
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/JFRashu/Task-Management-with-Chat)
